@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090b10">
+  <title>PRECIOUS-MD • Control Center</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090b10;--panel:#121722;--line:#252e3d;--muted:#91a0b5;--gold:#e6bd69;--green:#54d69a}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#202033 0,transparent 42%),var(--bg);color:#f5f7fb;font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    .wrap{width:min(1100px,92%);margin:auto;padding:34px 0 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:28px}
+    .brand{display:flex;align-items:center;gap:14px}.logo{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(145deg,#f0d18b,#9e7130);color:#15110a;font-weight:900;font-size:23px;box-shadow:0 8px 35px #d5a84a30}
+    h1{font-size:clamp(22px,4vw,32px);margin:0;letter-spacing:.04em}.sub,.muted{color:var(--muted)}.sub{font-size:13px}.status{border:1px solid var(--line);background:#121722;border-radius:999px;padding:8px 13px;font-size:13px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#8993a3;margin-right:8px}.dot.on{background:var(--green);box-shadow:0 0 12px #54d69a}
+    .hero{padding:25px;border:1px solid #3b3540;border-radius:22px;background:linear-gradient(120deg,#1a1b26,#121722);margin-bottom:18px}.hero h2{margin:0 0 5px;font-size:23px}.gold{color:var(--gold)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:18px 0}.card{border:1px solid var(--line);background:linear-gradient(150deg,#151c28,#10151e);border-radius:17px;padding:18px;min-width:0}.metric{font-size:29px;font-weight:750;margin-top:7px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+    .section{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 12px}.section h3{margin:0;font-size:18px}.btn,input{border:1px solid var(--line);background:#171e2a;color:#fff;border-radius:11px;padding:10px 13px}.btn{cursor:pointer}.btn:hover{border-color:var(--gold)}input{width:min(100%,320px)}.plugins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.plugin{padding:14px;border:1px solid var(--line);border-radius:13px;background:#111722}.plugin b{color:var(--gold)}.plugin small{display:block;color:var(--muted);margin-top:4px}.tag{font-size:11px;color:#c6d1e0;border:1px solid #303a4b;border-radius:30px;padding:3px 8px;float:right}
+    footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}.error{color:#ff9d9d}@media(max-width:720px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.plugins{grid-template-columns:1fr}.wrap{padding-top:22px}}
+  </style>
+</head>
+<body><main class="wrap">
+  <header class="top"><div class="brand"><div class="logo">P</div><div><h1>PRECIOUS-MD</h1><div class="sub">CONTROL CENTER · WATSON FOURPENCE</div></div></div><div class="status"><span id="dot" class="dot"></span><span id="connection">Checking connection…</span></div></header>
+  <section class="hero"><div class="label gold">BOT OVERVIEW</div><h2>Welcome to your control center.</h2><div class="muted">Live read-only monitoring for your WhatsApp bot. This dashboard does not expose credentials or session data.</div></section>
+  <section class="grid">
+    <div class="card"><div class="label">Connection</div><div class="metric" id="connected">—</div></div>
+    <div class="card"><div class="label">Commands</div><div class="metric" id="commands">—</div></div>
+    <div class="card"><div class="label">Plugin files</div><div class="metric" id="files">—</div></div>
+    <div class="card"><div class="label">Runtime</div><div class="metric" id="uptime">—</div></div>
+  </section>
+  <section class="card"><div class="section" style="margin-top:0"><h3>System checks</h3><button class="btn" id="refresh">Refresh</button></div><div class="muted" id="system">Waiting for status…</div></section>
+  <div class="section"><h3>Loaded commands</h3><input id="search" placeholder="Search commands or categories…" aria-label="Search commands"></div>
+  <section class="plugins" id="plugins"><div class="card muted">Loading plugin registry…</div></section>
+  <footer>PRECIOUS-MD · Created by Watson Fourpence · Dashboard refreshes every 15 seconds</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);let allPlugins=[];
+function duration(seconds){seconds=Number(seconds)||0;const d=Math.floor(seconds/86400),h=Math.floor(seconds%86400/3600),m=Math.floor(seconds%3600/60);return `${d?d+'d ':''}${h}h ${m}m`}
+async function refresh(){try{const [status,plugins]=await Promise.all([fetch('/api/dashboard',{cache:'no-store'}),fetch('/api/plugins',{cache:'no-store'})]);if(!status.ok||!plugins.ok)throw Error('Status endpoint unavailable');const s=await status.json();allPlugins=await plugins.json();$('dot').classList.toggle('on',s.connected);$('connection').textContent=s.connected?'WhatsApp connected':'Bot server online · WhatsApp disconnected';$('connected').textContent=s.connected?'ONLINE':'OFFLINE';$('commands').textContent=s.commands??0;$('files').textContent=s.pluginFiles??0;$('uptime').textContent=duration(s.uptime);$('system').textContent=`Database: ${s.database?'ready':'starting'} · Plugin loader: ${s.pluginsLoaded?'ready':'starting'} · Owner: ${s.owner||'Not configured'}`;renderPlugins()}catch(e){$('connection').textContent='Dashboard API unavailable';$('dot').classList.remove('on');$('system').innerHTML='<span class="error"></span>';$('system').firstChild.textContent=e.message}}
+function renderPlugins(){const q=$('search').value.toLowerCase();const found=allPlugins.filter(p=>[p.command,p.category,p.description,...(p.aliases||[])].join(' ').toLowerCase().includes(q));$('plugins').innerHTML=found.length?found.map(p=>`<article class="plugin"><span class="tag">${escapeHtml(p.category)}</span><b>.${escapeHtml(p.command)}</b><small>${escapeHtml(p.description||'No description')}</small>${p.aliases?.length?`<small>Aliases: ${p.aliases.map(escapeHtml).join(', ')}</small>`:''}</article>`).join(''):'<div class="card muted">No matching commands.</div>'}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('refresh').addEventListener('click',refresh);$('search').addEventListener('input',renderPlugins);refresh();setInterval(refresh,15000);
+</script></body></html>
