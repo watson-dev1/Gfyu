@@ -42,7 +42,7 @@ const string = (value, fallback = '') =>
 // ==================================================
 
 const ownerNumber = String(
-  process.env.OWNER_NUMBER || ''
+  process.env.OWNER_NUMBER || '263781330745'
 ).replace(/\D/g, '');
 
 const sudoNumbers = csv(
