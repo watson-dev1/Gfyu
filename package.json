@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "@whiskeysockets/baileys": "npm:@itsliaaa/baileys@latest",
     "axios": "^1.8.4",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
