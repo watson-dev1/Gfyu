@@ -115,10 +115,10 @@ const config = {
   // WHATSAPP AUTOMATION
   readMessages: bool(process.env.READ_MESSAGES, false),
   alwaysOnline: bool(process.env.ALWAYS_ONLINE, false),
-  autoViewStatus: bool(process.env.AUTO_VIEW_STATUS, false),
+  autoViewStatus: bool(process.env.AUTO_VIEW_STATUS, true),
   autoStatusReact: bool(process.env.AUTO_STATUS_REACT, false),
   autoReact: bool(process.env.AUTO_REACT, false),
-  antiCall: bool(process.env.ANTI_CALL, false),
+  antiCall: bool(process.env.ANTI_CALL, true),
   autoTyping: bool(process.env.AUTO_TYPING, false),
   autoRecording: bool(process.env.AUTO_RECORDING, false),
 
