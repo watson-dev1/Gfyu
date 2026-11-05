@@ -1,6 +1,13 @@
 
 import config from '../config.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import { sendQuickButtons } from '../lib/buttons.js';
+
+// ==================================================
+// PRECIOUS-MD MENU CONFIGURATION
+// ==================================================
 
 const categories = {
   general: 'General',
@@ -15,6 +22,16 @@ const categories = {
   utility: 'Utilities'
 };
 
+const MENU_IMAGE = path.join(
+  process.cwd(),
+  'media',
+  'watson.jpg'
+);
+
+// ==================================================
+// PLUGIN HELPERS
+// ==================================================
+
 function getPlugins() {
   return (globalThis.plugins || []).filter(plugin =>
     plugin && typeof plugin.command === 'string'
@@ -27,18 +44,27 @@ function normalizeCategory(category) {
 
 function getCategoryPlugins(category) {
   return getPlugins()
-    .filter(plugin => normalizeCategory(plugin.category) === category)
-    .sort((a, b) => a.command.localeCompare(b.command));
+    .filter(plugin =>
+      normalizeCategory(plugin.category) === category
+    )
+    .sort((a, b) =>
+      a.command.localeCompare(b.command)
+    );
 }
 
 function getCommandCount() {
   return globalThis.commandMap instanceof Map
     ? globalThis.commandMap.size
     : getPlugins().reduce(
-        (total, plugin) => total + 1 + (plugin.aliases?.length || 0),
+        (total, plugin) =>
+          total + 1 + (plugin.aliases?.length || 0),
         0
       );
 }
+
+// ==================================================
+// DYNAMIC COMMAND MENU
+// ==================================================
 
 function makeMenu() {
   const grouped = new Map();
@@ -56,13 +82,16 @@ function makeMenu() {
   const sections = [];
 
   for (const [category, commands] of grouped) {
-    const title = categories[category] || category.toUpperCase();
+    const title =
+      categories[category] || category.toUpperCase();
 
     sections.push(
       `\n╭━━〔 *${title.toUpperCase()}* 〕━━╮\n` +
       [...commands]
         .sort()
-        .map(command => `┃ ${config.prefix}${command}`)
+        .map(command =>
+          `┃ ${config.prefix}${command}`
+        )
         .join('\n') +
       '\n╰━━━━━━━━━━━━━━━━━━╯'
     );
@@ -71,19 +100,75 @@ function makeMenu() {
   return sections.join('\n');
 }
 
-async function sendNavigation(ctx, buttons) {
-  return sendQuickButtons(ctx.sock, ctx.chat, {
-    title: 'PRECIOUS-MD NAVIGATION',
-    body: 'Choose another section:',
-    footer: 'Created by Watson Fourpence',
-    quoted: ctx.msg,
-    buttons
-  });
+// ==================================================
+// MENU IMAGE
+// ==================================================
+
+async function getMenuImage() {
+  try {
+    return await fs.readFile(MENU_IMAGE);
+  } catch (error) {
+    console.error(
+      '[PRECIOUS MENU IMAGE]',
+      error.message
+    );
+
+    return null;
+  }
 }
+
+// ==================================================
+// QUICK BUTTON NAVIGATION
+// ==================================================
+
+async function sendNavigation(ctx, buttons) {
+  return sendQuickButtons(
+    ctx.sock,
+    ctx.chat,
+    {
+      title: 'PRECIOUS-MD NAVIGATION',
+      body: 'Choose another section:',
+      footer: 'Created by Watson Fourpence',
+      quoted: ctx.msg,
+      buttons
+    }
+  );
+}
+
+function categoryButtons() {
+  return [
+    {
+      text: 'GENERAL',
+      id: `${config.prefix}generalmenu`
+    },
+    {
+      text: 'GROUP',
+      id: `${config.prefix}groupmenu`
+    },
+    {
+      text: 'TOOLS',
+      id: `${config.prefix}toolsmenu`
+    }
+  ];
+}
+
+function allCategoryButtons() {
+  return [
+    { text: 'GENERAL', id: `${config.prefix}generalmenu` },
+    { text: 'OWNER', id: `${config.prefix}ownermenu` },
+    { text: 'GROUP', id: `${config.prefix}groupmenu` }
+  ];
+}
+
+// ==================================================
+// SHOW CATEGORY
+// ==================================================
 
 async function showCategory(ctx, category) {
   const plugins = getCategoryPlugins(category);
-  const title = categories[category] || category.toUpperCase();
+
+  const title =
+    categories[category] || category.toUpperCase();
 
   if (!plugins.length) {
     return ctx.reply(
@@ -105,19 +190,24 @@ async function showCategory(ctx, category) {
   );
 
   await sendNavigation(ctx, [
-    { text: 'MAIN MENU', id: `${config.prefix}menu` },
-    { text: 'GENERAL', id: `${config.prefix}generalmenu` },
-    { text: 'TOOLS', id: `${config.prefix}toolsmenu` }
+    {
+      text: 'MAIN MENU',
+      id: `${config.prefix}menu`
+    },
+    {
+      text: 'GENERAL',
+      id: `${config.prefix}generalmenu`
+    },
+    {
+      text: 'TOOLS',
+      id: `${config.prefix}toolsmenu`
+    }
   ]);
 }
 
-function categoryButtons() {
-  return [
-    { text: 'GENERAL', id: `${config.prefix}generalmenu` },
-    { text: 'GROUP', id: `${config.prefix}groupmenu` },
-    { text: 'TOOLS', id: `${config.prefix}toolsmenu` }
-  ];
-}
+// ==================================================
+// CATEGORY COMMANDS
+// ==================================================
 
 const categoryCommands = [
   ['generalmenu', 'general', 'Show general commands'],
@@ -134,10 +224,77 @@ const categoryCommands = [
   command,
   category: 'general',
   description,
-  run: ctx => showCategory(ctx, category)
+
+  run: ctx =>
+    showCategory(ctx, category)
 }));
 
+// ==================================================
+// MAIN MENU CAPTION
+// ==================================================
+
+function makeMainMenu() {
+  const total = getCommandCount();
+
+  return (
+    `╭━━〔 *${config.botName}* 〕━━╮\n` +
+    `┃ 👑 Creator: ${config.ownerName}\n` +
+    `┃ ⚡ Prefix: ${config.prefix}\n` +
+    `┃ ⏱ Runtime: ${Math.floor(process.uptime())} seconds\n` +
+    `┃ 🧩 Commands: ${total}\n` +
+    `┃ 🌐 Mode: ${config.publicMode ? 'PUBLIC' : 'PRIVATE'}\n` +
+    `╰━━━━━━━━━━━━━━━━━━╯\n` +
+    makeMenu() +
+    `\n\n_Powered by Watson Fourpence_`
+  );
+}
+
+// ==================================================
+// SEND MAIN MENU
+// ==================================================
+
+async function sendMainMenu(ctx) {
+  const caption = makeMainMenu().slice(0, 65000);
+  const image = await getMenuImage();
+
+  if (image) {
+    await ctx.sock.sendMessage(
+      ctx.chat,
+      {
+        image,
+        caption
+      },
+      {
+        quoted: ctx.msg
+      }
+    );
+  } else {
+    await ctx.reply(caption);
+  }
+
+  await sendQuickButtons(
+    ctx.sock,
+    ctx.chat,
+    {
+      title: 'PRECIOUS-MD NAVIGATION',
+      body: 'Choose a category to explore:',
+      footer: 'Created by Watson Fourpence',
+      quoted: ctx.msg,
+      buttons: categoryButtons()
+    }
+  );
+}
+
+// ==================================================
+// EXPORT MENU PLUGINS
+// ==================================================
+
 export default [
+
+  // ==================================================
+  // MAIN MENU
+  // ==================================================
+
   {
     command: 'menu',
     aliases: ['help', 'commands', 'list'],
@@ -145,30 +302,21 @@ export default [
     description: 'Display all available commands',
 
     run: async ctx => {
-      const total = getCommandCount();
+      try {
+        await sendMainMenu(ctx);
+      } catch (error) {
+        console.error('[PRECIOUS MAIN MENU]', error);
 
-      const message =
-        `╭━━〔 *${config.botName}* 〕━━╮\n` +
-        `┃ 👑 Creator: ${config.ownerName}\n` +
-        `┃ ⚡ Prefix: ${config.prefix}\n` +
-        `┃ ⏱ Runtime: ${Math.floor(process.uptime())} seconds\n` +
-        `┃ 🧩 Commands: ${total}\n` +
-        `┃ 🌐 Mode: ${config.publicMode ? 'PUBLIC' : 'PRIVATE'}\n` +
-        `╰━━━━━━━━━━━━━━━━━━╯\n` +
-        makeMenu() +
-        `\n\n_Powered by Watson Fourpence_`;
-
-      await ctx.reply(message.slice(0, 65000));
-
-      await sendQuickButtons(ctx.sock, ctx.chat, {
-        title: 'PRECIOUS-MD NAVIGATION',
-        body: 'Choose a category to explore:',
-        footer: 'Created by Watson Fourpence',
-        quoted: ctx.msg,
-        buttons: categoryButtons()
-      });
+        await ctx.reply(
+          makeMainMenu().slice(0, 65000)
+        );
+      }
     }
   },
+
+  // ==================================================
+  // HELP
+  // ==================================================
 
   {
     command: 'helpme',
@@ -193,6 +341,10 @@ export default [
     }
   },
 
+  // ==================================================
+  // FIND COMMAND
+  // ==================================================
+
   {
     command: 'find',
     aliases: ['searchcmd'],
@@ -200,7 +352,9 @@ export default [
     description: 'Search for a command',
 
     run: async ctx => {
-      const query = String(ctx.q || '').trim().toLowerCase();
+      const query = String(ctx.q || '')
+        .trim()
+        .toLowerCase();
 
       if (!query) {
         return ctx.reply(
@@ -217,7 +371,9 @@ export default [
       );
 
       if (!matches.length) {
-        return ctx.reply('No matching commands found.');
+        return ctx.reply(
+          'No matching commands found.'
+        );
       }
 
       await ctx.reply(
@@ -231,6 +387,10 @@ export default [
     }
   },
 
+  // ==================================================
+  // CATEGORIES
+  // ==================================================
+
   {
     command: 'categories',
     aliases: ['cmdcategories'],
@@ -241,8 +401,11 @@ export default [
       const counts = {};
 
       for (const plugin of getPlugins()) {
-        const category = normalizeCategory(plugin.category);
-        counts[category] = (counts[category] || 0) + 1;
+        const category =
+          normalizeCategory(plugin.category);
+
+        counts[category] =
+          (counts[category] || 0) + 1;
       }
 
       const output = Object.entries(counts)
@@ -255,8 +418,15 @@ export default [
         `📂 *COMMAND CATEGORIES*\n\n` +
         (output.join('\n') || 'No commands registered.')
       );
+
+      await sendNavigation(ctx, allCategoryButtons());
     }
   },
 
+  // ==================================================
+  // CATEGORY PLUGINS
+  // ==================================================
+
   ...categoryCommands
+
 ];
