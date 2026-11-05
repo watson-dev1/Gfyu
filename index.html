@@ -1,40 +1,791 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#090b10">
-  <title>PRECIOUS-MD • Control Center</title>
-  <style>
-    :root{color-scheme:dark;--bg:#090b10;--panel:#121722;--line:#252e3d;--muted:#91a0b5;--gold:#e6bd69;--green:#54d69a}
-    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#202033 0,transparent 42%),var(--bg);color:#f5f7fb;font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
-    .wrap{width:min(1100px,92%);margin:auto;padding:34px 0 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:28px}
-    .brand{display:flex;align-items:center;gap:14px}.logo{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(145deg,#f0d18b,#9e7130);color:#15110a;font-weight:900;font-size:23px;box-shadow:0 8px 35px #d5a84a30}
-    h1{font-size:clamp(22px,4vw,32px);margin:0;letter-spacing:.04em}.sub,.muted{color:var(--muted)}.sub{font-size:13px}.status{border:1px solid var(--line);background:#121722;border-radius:999px;padding:8px 13px;font-size:13px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#8993a3;margin-right:8px}.dot.on{background:var(--green);box-shadow:0 0 12px #54d69a}
-    .hero{padding:25px;border:1px solid #3b3540;border-radius:22px;background:linear-gradient(120deg,#1a1b26,#121722);margin-bottom:18px}.hero h2{margin:0 0 5px;font-size:23px}.gold{color:var(--gold)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:18px 0}.card{border:1px solid var(--line);background:linear-gradient(150deg,#151c28,#10151e);border-radius:17px;padding:18px;min-width:0}.metric{font-size:29px;font-weight:750;margin-top:7px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-    .section{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 12px}.section h3{margin:0;font-size:18px}.btn,input{border:1px solid var(--line);background:#171e2a;color:#fff;border-radius:11px;padding:10px 13px}.btn{cursor:pointer}.btn:hover{border-color:var(--gold)}input{width:min(100%,320px)}.plugins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.plugin{padding:14px;border:1px solid var(--line);border-radius:13px;background:#111722}.plugin b{color:var(--gold)}.plugin small{display:block;color:var(--muted);margin-top:4px}.tag{font-size:11px;color:#c6d1e0;border:1px solid #303a4b;border-radius:30px;padding:3px 8px;float:right}
-    footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}.error{color:#ff9d9d}@media(max-width:720px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.plugins{grid-template-columns:1fr}.wrap{padding-top:22px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090b10">
+<meta name="description" content="PRECIOUS-MD WhatsApp Bot Control Center">
+<title>PRECIOUS-MD | Control Center</title>
+
+<style>
+:root {
+  color-scheme:dark;
+  --bg:#090b10;
+  --panel:#121722;
+  --panel2:#171e2a;
+  --line:#252e3d;
+  --muted:#91a0b5;
+  --gold:#e6bd69;
+  --green:#54d69a;
+  --red:#ff7373;
+  --blue:#73a9ff;
+}
+
+* {box-sizing:border-box}
+
+body {
+  margin:0;
+  background:
+    radial-gradient(ellipse at 80% 0%,#252139 0,transparent 42%),
+    var(--bg);
+  color:#f5f7fb;
+  font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;
+}
+
+button,input,select {font:inherit}
+button {cursor:pointer}
+
+.wrap {
+  width:min(1200px,94%);
+  margin:auto;
+  padding:30px 0 55px;
+}
+
+.top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-bottom:28px;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.logo {
+  width:57px;
+  height:57px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,#f0d18b,#9e7130);
+  color:#15110a;
+  font-weight:950;
+  font-size:25px;
+  box-shadow:0 8px 35px #d5a84a30;
+}
+
+h1 {
+  font-size:clamp(22px,4vw,32px);
+  margin:0;
+  letter-spacing:.04em;
+}
+
+.sub,.muted {color:var(--muted)}
+.sub {font-size:12px;letter-spacing:.12em}
+
+.status {
+  border:1px solid var(--line);
+  background:var(--panel);
+  border-radius:999px;
+  padding:9px 14px;
+  font-size:13px;
+}
+
+.dot {
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#8993a3;
+  margin-right:8px;
+}
+
+.dot.on {
+  background:var(--green);
+  box-shadow:0 0 12px var(--green);
+}
+
+.dot.off {background:var(--red)}
+
+.hero {
+  padding:26px;
+  border:1px solid #3b3540;
+  border-radius:22px;
+  background:linear-gradient(120deg,#1a1b26,#121722);
+  margin-bottom:18px;
+}
+
+.hero h2 {
+  margin:5px 0;
+  font-size:25px;
+}
+
+.gold {color:var(--gold)}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:13px;
+  margin:18px 0;
+}
+
+.card {
+  border:1px solid var(--line);
+  background:linear-gradient(150deg,#151c28,#10151e);
+  border-radius:17px;
+  padding:18px;
+  min-width:0;
+}
+
+.metric {
+  font-size:29px;
+  font-weight:750;
+  margin-top:7px;
+  overflow-wrap:anywhere;
+}
+
+.label {
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+
+.section {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:28px 0 12px;
+}
+
+.section h3 {
+  margin:0;
+  font-size:18px;
+}
+
+.btn,input,select {
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:#fff;
+  border-radius:11px;
+  padding:10px 13px;
+}
+
+.btn:hover {border-color:var(--gold)}
+
+.btn:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.btn.gold-btn {
+  background:linear-gradient(135deg,#e6bd69,#a77c39);
+  color:#15110a;
+  font-weight:800;
+  border:0;
+}
+
+input {width:min(100%,340px)}
+select {max-width:100%}
+
+.plugins {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.plugin {
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#111722;
+  overflow-wrap:anywhere;
+}
+
+.plugin b {color:var(--gold)}
+
+.plugin small {
+  display:block;
+  color:var(--muted);
+  margin-top:5px;
+}
+
+.tag {
+  font-size:10px;
+  color:#c6d1e0;
+  border:1px solid #303a4b;
+  border-radius:30px;
+  padding:3px 8px;
+  float:right;
+}
+
+.bar {
+  height:9px;
+  background:#252e3d;
+  border-radius:20px;
+  overflow:hidden;
+  margin-top:9px;
+}
+
+.bar-fill {
+  height:100%;
+  width:0;
+  background:linear-gradient(90deg,#a77c39,#e6bd69);
+  border-radius:20px;
+  transition:width .4s;
+}
+
+.two {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
+  margin-top:15px;
+}
+
+.info-row {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid var(--line);
+  padding:10px 0;
+  font-size:13px;
+}
+
+.info-row:last-child {border:0}
+.info-row span:first-child {color:var(--muted)}
+
+.toolbar {
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+}
+
+.hidden {display:none!important}
+.error {color:#ff9d9d}
+.success {color:var(--green)}
+
+footer {
+  margin-top:35px;
+  color:var(--muted);
+  font-size:12px;
+  text-align:center;
+}
+
+@media(max-width:800px) {
+  .grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:600px) {
+  .plugins,.two {grid-template-columns:1fr}
+  .wrap {padding-top:20px}
+  .hero {padding:20px}
+  .section {align-items:flex-start}
+  .metric {font-size:24px}
+}
+</style>
 </head>
-<body><main class="wrap">
-  <header class="top"><div class="brand"><div class="logo">P</div><div><h1>PRECIOUS-MD</h1><div class="sub">CONTROL CENTER · WATSON FOURPENCE</div></div></div><div class="status"><span id="dot" class="dot"></span><span id="connection">Checking connection…</span></div></header>
-  <section class="hero"><div class="label gold">BOT OVERVIEW</div><h2>Welcome to your control center.</h2><div class="muted">Live read-only monitoring for your WhatsApp bot. This dashboard does not expose credentials or session data.</div></section>
-  <section class="grid">
-    <div class="card"><div class="label">Connection</div><div class="metric" id="connected">—</div></div>
-    <div class="card"><div class="label">Commands</div><div class="metric" id="commands">—</div></div>
-    <div class="card"><div class="label">Plugin files</div><div class="metric" id="files">—</div></div>
-    <div class="card"><div class="label">Runtime</div><div class="metric" id="uptime">—</div></div>
-  </section>
-  <section class="card"><div class="section" style="margin-top:0"><h3>System checks</h3><button class="btn" id="refresh">Refresh</button></div><div class="muted" id="system">Waiting for status…</div></section>
-  <div class="section"><h3>Loaded commands</h3><input id="search" placeholder="Search commands or categories…" aria-label="Search commands"></div>
-  <section class="plugins" id="plugins"><div class="card muted">Loading plugin registry…</div></section>
-  <footer>PRECIOUS-MD · Created by Watson Fourpence · Dashboard refreshes every 15 seconds</footer>
+
+<body>
+<main class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>PRECIOUS-MD</h1>
+      <div class="sub">PREMIUM CONTROL CENTER · WATSON FOURPENCE</div>
+    </div>
+  </div>
+
+  <div class="status">
+    <span id="dot" class="dot"></span>
+    <span id="connection">Checking connection...</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="label gold">BOT OVERVIEW</div>
+  <h2>Welcome to your <span class="gold">Control Center.</span></h2>
+  <div class="muted">
+    Monitor your WhatsApp bot, system resources,
+    commands and plugin activity.
+  </div>
+
+  <div class="toolbar" style="margin-top:17px">
+    <button class="btn" id="refresh">↻ Refresh</button>
+    <button class="btn" id="showCommands">Commands</button>
+    <button class="btn" id="showPlugins">Plugins</button>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card">
+    <div class="label">WhatsApp connection</div>
+    <div class="metric" id="connected">—</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Commands</div>
+    <div class="metric" id="commands">—</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Plugin files</div>
+    <div class="metric" id="files">—</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Runtime</div>
+    <div class="metric" id="uptime">—</div>
+  </div>
+</section>
+
+<section class="two">
+  <div class="card">
+    <div class="section" style="margin-top:0">
+      <h3>Memory usage</h3>
+      <span id="memoryText" class="muted">—</span>
+    </div>
+    <div class="bar">
+      <div class="bar-fill" id="memoryBar"></div>
+    </div>
+    <small class="muted">Node.js heap usage</small>
+  </div>
+
+  <div class="card">
+    <div class="section" style="margin-top:0">
+      <h3>Bot health</h3>
+      <span id="healthStatus" class="success">Checking...</span>
+    </div>
+    <div id="healthDetails" class="muted">
+      Waiting for system information...
+    </div>
+  </div>
+</section>
+
+<section class="two">
+  <div class="card">
+    <h3>System information</h3>
+    <div id="systemInfo"></div>
+  </div>
+
+  <div class="card">
+    <h3>Bot statistics</h3>
+    <div id="botStats"></div>
+  </div>
+</section>
+
+<section class="card" style="margin-top:18px">
+  <div class="section" style="margin-top:0">
+    <h3>Plugin management</h3>
+    <button class="btn gold-btn" id="reloadPlugins">
+      ↻ Reload plugins
+    </button>
+  </div>
+
+  <div class="muted" id="pluginMessage">
+    Plugin management is ready.
+  </div>
+</section>
+
+<div class="section">
+  <h3 id="registryTitle">Loaded plugins</h3>
+
+  <div class="toolbar">
+    <input
+      id="search"
+      placeholder="Search commands..."
+      aria-label="Search commands"
+    >
+
+    <select id="category">
+      <option value="">All categories</option>
+    </select>
+  </div>
+</div>
+
+<section class="plugins" id="plugins">
+  <div class="card muted">Loading plugin registry...</div>
+</section>
+
+<footer>
+  PRECIOUS-MD · Created by Watson Fourpence
+  <br>
+  Live monitoring · Automatic refresh every 15 seconds
+</footer>
+
 </main>
+
 <script>
-const $=id=>document.getElementById(id);let allPlugins=[];
-function duration(seconds){seconds=Number(seconds)||0;const d=Math.floor(seconds/86400),h=Math.floor(seconds%86400/3600),m=Math.floor(seconds%3600/60);return `${d?d+'d ':''}${h}h ${m}m`}
-async function refresh(){try{const [status,plugins]=await Promise.all([fetch('/api/dashboard',{cache:'no-store'}),fetch('/api/plugins',{cache:'no-store'})]);if(!status.ok||!plugins.ok)throw Error('Status endpoint unavailable');const s=await status.json();allPlugins=await plugins.json();$('dot').classList.toggle('on',s.connected);$('connection').textContent=s.connected?'WhatsApp connected':'Bot server online · WhatsApp disconnected';$('connected').textContent=s.connected?'ONLINE':'OFFLINE';$('commands').textContent=s.commands??0;$('files').textContent=s.pluginFiles??0;$('uptime').textContent=duration(s.uptime);$('system').textContent=`Database: ${s.database?'ready':'starting'} · Plugin loader: ${s.pluginsLoaded?'ready':'starting'} · Owner: ${s.owner||'Not configured'}`;renderPlugins()}catch(e){$('connection').textContent='Dashboard API unavailable';$('dot').classList.remove('on');$('system').innerHTML='<span class="error"></span>';$('system').firstChild.textContent=e.message}}
-function renderPlugins(){const q=$('search').value.toLowerCase();const found=allPlugins.filter(p=>[p.command,p.category,p.description,...(p.aliases||[])].join(' ').toLowerCase().includes(q));$('plugins').innerHTML=found.length?found.map(p=>`<article class="plugin"><span class="tag">${escapeHtml(p.category)}</span><b>.${escapeHtml(p.command)}</b><small>${escapeHtml(p.description||'No description')}</small>${p.aliases?.length?`<small>Aliases: ${p.aliases.map(escapeHtml).join(', ')}</small>`:''}</article>`).join(''):'<div class="card muted">No matching commands.</div>'}
-function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-$('refresh').addEventListener('click',refresh);$('search').addEventListener('input',renderPlugins);refresh();setInterval(refresh,15000);
-</script></body></html>
+'use strict';
+
+const $ = id => document.getElementById(id);
+
+let allPlugins = [];
+let allCommands = [];
+
+let currentView = 'plugins';
+let dashboardToken = '';
+
+let refreshRunning = false;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[char]);
+}
+
+function duration(seconds) {
+  seconds = Number(seconds) || 0;
+
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor(seconds % 86400 / 3600);
+  const minutes = Math.floor(seconds % 3600 / 60);
+
+  return `${days ? days + 'd ' : ''}${hours}h ${minutes}m`;
+}
+
+function bytes(value) {
+  if (!Number.isFinite(Number(value))) return '—';
+
+  const units = ['B','KB','MB','GB'];
+
+  let size = Number(value);
+  let index = 0;
+
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024;
+    index++;
+  }
+
+  return `${size.toFixed(1)} ${units[index]}`;
+}
+
+function setInfo(element, rows) {
+  $(element).innerHTML = rows.map(([label,value]) => `
+    <div class="info-row">
+      <span>${escapeHtml(label)}</span>
+      <b>${escapeHtml(value)}</b>
+    </div>
+  `).join('');
+}
+
+async function api(url, options = {}) {
+  const headers = {
+    ...(options.headers || {})
+  };
+
+  if (dashboardToken) {
+    headers['x-dashboard-token'] = dashboardToken;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+    cache:'no-store'
+  });
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function refresh() {
+  if (refreshRunning) return;
+
+  refreshRunning = true;
+
+  try {
+    const [dashboard,plugins,health] = await Promise.all([
+      api('/api/dashboard'),
+      api('/api/plugins'),
+      api('/health')
+    ]);
+
+    allPlugins = Array.isArray(plugins)
+      ? plugins
+      : plugins.plugins || [];
+
+    updateDashboard(dashboard);
+    updateHealth(health);
+
+    // System information is protected.
+    // Request the token only when it is needed.
+    try {
+      const system = await api('/api/system');
+      updateSystem(system);
+    } catch (error) {
+      if (error.message.includes('401')) {
+        $('systemInfo').innerHTML =
+          '<div class="muted">Dashboard token required to view system details.</div>';
+      } else {
+        throw error;
+      }
+    }
+
+    renderRegistry();
+
+  } catch (error) {
+    $('connection').textContent = 'API unavailable';
+    $('dot').className = 'dot off';
+
+    $('healthStatus').textContent = 'Unavailable';
+    $('healthStatus').className = 'error';
+
+    $('healthDetails').textContent = error.message;
+
+  } finally {
+    refreshRunning = false;
+  }
+}
+
+function updateDashboard(data) {
+  const connected = Boolean(data.bot?.connected);
+
+  $('dot').className = connected ? 'dot on' : 'dot off';
+
+  $('connection').textContent = connected
+    ? 'WhatsApp connected'
+    : 'WhatsApp disconnected';
+
+  $('connected').textContent = connected
+    ? 'ONLINE'
+    : 'OFFLINE';
+
+  $('commands').textContent =
+    data.plugins?.commands ?? 0;
+
+  $('files').textContent =
+    data.plugins?.files ?? 0;
+
+  $('uptime').textContent =
+    duration(data.system?.uptime);
+
+  setInfo('botStats', [
+    ['Bot',data.bot?.name || 'PRECIOUS-MD'],
+    ['Owner',data.bot?.owner || 'Watson Fourpence'],
+    ['Connection',data.bot?.connection || 'Unknown'],
+    ['Database',data.database?.loaded ? 'Ready':'Loading'],
+    ['Plugins',data.plugins?.plugins ?? 0],
+    ['Messages',data.statistics?.messages ?? 0],
+    ['Errors',data.statistics?.errors ?? 0],
+    ['Reconnects',data.statistics?.reconnects ?? 0]
+  ]);
+
+  populateCategories(data.plugins?.categories || {});
+}
+
+function updateSystem(data) {
+  const memory = data.memory || {};
+
+  const used = Number(memory.heapUsed) || 0;
+  const total = Number(memory.heapTotal) || 0;
+
+  const percent = total
+    ? Math.min(100,used / total * 100)
+    : 0;
+
+  $('memoryText').textContent =
+    `${bytes(used)} / ${bytes(total)}`;
+
+  $('memoryBar').style.width = `${percent}%`;
+
+  setInfo('systemInfo', [
+    ['Node.js',data.process?.version || 'Unknown'],
+    ['Platform',data.process?.platform || 'Unknown'],
+    ['Architecture',data.process?.architecture || 'Unknown'],
+    ['Process ID',data.process?.pid ?? 'Unknown'],
+    ['CPU user',data.cpu?.user ?? 0],
+    ['RSS memory',bytes(memory.rss || 0)]
+  ]);
+}
+
+function updateHealth(data) {
+  const healthy = Boolean(data.success);
+  const connected = Boolean(data.ok);
+
+  $('healthStatus').textContent =
+    !healthy ? 'Starting' :
+    connected ? 'Operational' :
+    'Disconnected';
+
+  $('healthStatus').className =
+    connected ? 'success' : 'error';
+
+  $('healthDetails').textContent =
+    `Database: ${data.database ? 'Ready':'Waiting'} · ` +
+    `Plugins: ${data.pluginsLoaded ? 'Ready':'Waiting'} · ` +
+    `Connection: ${data.connection || 'Unknown'}`;
+}
+
+function populateCategories(categories) {
+  const select = $('category');
+  const previous = select.value;
+
+  const names = Object.keys(categories).sort();
+
+  select.innerHTML =
+    '<option value="">All categories</option>' +
+    names.map(name =>
+      `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+    ).join('');
+
+  if (names.includes(previous)) {
+    select.value = previous;
+  }
+}
+
+function renderRegistry() {
+  const query = $('search').value.toLowerCase();
+  const category = $('category').value;
+
+  const items = currentView === 'plugins'
+    ? allPlugins
+    : allCommands;
+
+  const filtered = items.filter(item => {
+    const matchesCategory =
+      !category || item.category === category;
+
+    const text = [
+      item.command,
+      item.name,
+      item.category,
+      item.description,
+      ...(item.aliases || [])
+    ].join(' ').toLowerCase();
+
+    return matchesCategory && text.includes(query);
+  });
+
+  $('registryTitle').textContent =
+    currentView === 'plugins'
+      ? 'Loaded plugins'
+      : 'Registered commands';
+
+  $('plugins').innerHTML = filtered.length
+    ? filtered.map(item => {
+        const command = item.command || item.name || 'unknown';
+
+        return `
+          <article class="plugin">
+            <span class="tag">
+              ${escapeHtml(item.category || 'general')}
+            </span>
+
+            <b>.${escapeHtml(command)}</b>
+
+            <small>
+              ${escapeHtml(item.description || 'No description')}
+            </small>
+
+            ${item.aliases?.length
+              ? `<small>Aliases: ${
+                  item.aliases.map(escapeHtml).join(', ')
+                }</small>`
+              : ''}
+          </article>
+        `;
+      }).join('')
+    : '<div class="card muted">No matching entries found.</div>';
+}
+
+async function loadCommands() {
+  try {
+    const data = await api('/api/commands');
+
+    allCommands = data.commands || [];
+
+    if (currentView === 'commands') {
+      renderRegistry();
+    }
+
+  } catch (error) {
+    console.error('Command registry:',error);
+  }
+}
+
+async function reloadPlugins() {
+  const message = $('pluginMessage');
+
+  let token = dashboardToken;
+
+  if (!token) {
+    token = prompt('Enter your dashboard token:');
+  }
+
+  if (!token) {
+    message.textContent = 'Dashboard token required.';
+    return;
+  }
+
+  dashboardToken = token;
+
+  const button = $('reloadPlugins');
+  button.disabled = true;
+
+  message.textContent = 'Reloading plugins...';
+
+  try {
+    const result = await api('/api/plugins/reload',{
+      method:'POST'
+    });
+
+    message.textContent =
+      result.message || 'Plugins reloaded successfully.';
+
+    currentView = 'plugins';
+
+    await refresh();
+    await loadCommands();
+
+  } catch (error) {
+    if (error.message.includes('401')) {
+      dashboardToken = '';
+      message.textContent = 'Invalid dashboard token.';
+    } else {
+      message.textContent =
+        'Reload failed: ' + error.message;
+    }
+
+  } finally {
+    button.disabled = false;
+  }
+}
+
+$('refresh').addEventListener('click',async () => {
+  await refresh();
+  await loadCommands();
+});
+
+$('search').addEventListener('input',renderRegistry);
+$('category').addEventListener('change',renderRegistry);
+
+$('reloadPlugins').addEventListener(
+  'click',
+  reloadPlugins
+);
+
+$('showCommands').addEventListener('click',async () => {
+  currentView = 'commands';
+  await loadCommands();
+  renderRegistry();
+});
+
+$('showPlugins').addEventListener('click',() => {
+  currentView = 'plugins';
+  renderRegistry();
+});
+
+refresh();
+loadCommands();
+
+setInterval(refresh,15000);
+setInterval(loadCommands,30000);
+</script>
+</body>
+</html>
