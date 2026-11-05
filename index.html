@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,6 +268,92 @@ footer {
   text-align:center;
 }
 
+/* ======================================
+   LOGIN SCREEN
+====================================== */
+
+.login-screen {
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(ellipse at 80% 0%,#252139,transparent 55%),
+    #090b10;
+}
+
+.login-card {
+  width:100%;
+  max-width:410px;
+  padding:30px;
+  border:1px solid #383443;
+  border-radius:22px;
+  background:linear-gradient(145deg,#171e2a,#10151e);
+  box-shadow:0 20px 80px #0009;
+  text-align:center;
+}
+
+.login-logo {
+  width:75px;
+  height:75px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 20px;
+  border-radius:23px;
+  background:linear-gradient(145deg,#f0d18b,#9e7130);
+  color:#15110a;
+  font-size:34px;
+  font-weight:950;
+}
+
+.login-card h2 {
+  margin:0;
+  font-size:25px;
+}
+
+.login-card p {
+  color:var(--muted);
+  font-size:13px;
+}
+
+.password-box {
+  display:flex;
+  gap:8px;
+  margin-top:22px;
+}
+
+.password-box input {
+  width:100%;
+  min-width:0;
+  background:#090e17;
+}
+
+.password-box button {
+  flex-shrink:0;
+}
+
+.login-button {
+  width:100%;
+  margin-top:15px;
+  padding:13px;
+}
+
+.login-error {
+  color:var(--red);
+  font-size:12px;
+  min-height:20px;
+  margin-top:12px;
+}
+
+.login-footer {
+  margin-top:22px;
+  color:var(--muted);
+  font-size:11px;
+}
+
 @media(max-width:800px) {
   .grid {grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -279,44 +364,149 @@ footer {
   .hero {padding:20px}
   .section {align-items:flex-start}
   .metric {font-size:24px}
+  .login-card {padding:23px}
 }
 </style>
 </head>
 
 <body>
-<main class="wrap">
+
+<!-- ======================================
+     PASSWORD LOGIN
+====================================== -->
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+
+    <div class="login-logo">P</div>
+
+    <h2>PRECIOUS-MD</h2>
+
+    <div class="sub">SECURE CONTROL CENTER</div>
+
+    <p>
+      Enter your dashboard password to access
+      your WhatsApp bot management panel.
+    </p>
+
+    <form id="loginForm">
+
+      <div class="password-box">
+
+        <input
+          id="dashboardPassword"
+          type="password"
+          placeholder="Enter dashboard password"
+          autocomplete="current-password"
+          required
+        >
+
+        <button
+          type="button"
+          class="btn"
+          id="togglePassword"
+        >
+          Show
+        </button>
+
+      </div>
+
+      <button
+        class="btn gold-btn login-button"
+        id="loginButton"
+        type="submit"
+      >
+        UNLOCK DASHBOARD
+      </button>
+
+      <div
+        class="login-error"
+        id="loginError"
+        role="alert"
+      ></div>
+
+    </form>
+
+    <div class="login-footer">
+      Created by Watson Fourpence
+      <br>
+      PRECIOUS-MD v3 Security
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================================
+     DASHBOARD
+====================================== -->
+
+<main class="wrap hidden" id="dashboard">
 
 <header class="top">
+
   <div class="brand">
+
     <div class="logo">P</div>
+
     <div>
       <h1>PRECIOUS-MD</h1>
-      <div class="sub">PREMIUM CONTROL CENTER · WATSON FOURPENCE</div>
+
+      <div class="sub">
+        PREMIUM CONTROL CENTER · WATSON FOURPENCE
+      </div>
     </div>
+
   </div>
 
-  <div class="status">
-    <span id="dot" class="dot"></span>
-    <span id="connection">Checking connection...</span>
+  <div class="toolbar">
+
+    <div class="status">
+      <span id="dot" class="dot"></span>
+      <span id="connection">Checking connection...</span>
+    </div>
+
+    <button class="btn" id="logout">
+      Logout
+    </button>
+
   </div>
+
 </header>
 
 <section class="hero">
+
   <div class="label gold">BOT OVERVIEW</div>
-  <h2>Welcome to your <span class="gold">Control Center.</span></h2>
+
+  <h2>
+    Welcome to your
+    <span class="gold">Control Center.</span>
+  </h2>
+
   <div class="muted">
     Monitor your WhatsApp bot, system resources,
     commands and plugin activity.
   </div>
 
   <div class="toolbar" style="margin-top:17px">
-    <button class="btn" id="refresh">↻ Refresh</button>
-    <button class="btn" id="showCommands">Commands</button>
-    <button class="btn" id="showPlugins">Plugins</button>
+
+    <button class="btn" id="refresh">
+      ↻ Refresh
+    </button>
+
+    <button class="btn" id="showCommands">
+      Commands
+    </button>
+
+    <button class="btn" id="showPlugins">
+      Plugins
+    </button>
+
   </div>
+
 </section>
 
 <section class="grid">
+
   <div class="card">
     <div class="label">WhatsApp connection</div>
     <div class="metric" id="connected">—</div>
@@ -336,32 +526,43 @@ footer {
     <div class="label">Runtime</div>
     <div class="metric" id="uptime">—</div>
   </div>
+
 </section>
 
 <section class="two">
+
   <div class="card">
+
     <div class="section" style="margin-top:0">
       <h3>Memory usage</h3>
       <span id="memoryText" class="muted">—</span>
     </div>
+
     <div class="bar">
       <div class="bar-fill" id="memoryBar"></div>
     </div>
+
     <small class="muted">Node.js heap usage</small>
+
   </div>
 
   <div class="card">
+
     <div class="section" style="margin-top:0">
       <h3>Bot health</h3>
       <span id="healthStatus" class="success">Checking...</span>
     </div>
+
     <div id="healthDetails" class="muted">
       Waiting for system information...
     </div>
+
   </div>
+
 </section>
 
 <section class="two">
+
   <div class="card">
     <h3>System information</h3>
     <div id="systemInfo"></div>
@@ -371,25 +572,33 @@ footer {
     <h3>Bot statistics</h3>
     <div id="botStats"></div>
   </div>
+
 </section>
 
 <section class="card" style="margin-top:18px">
+
   <div class="section" style="margin-top:0">
+
     <h3>Plugin management</h3>
+
     <button class="btn gold-btn" id="reloadPlugins">
       ↻ Reload plugins
     </button>
+
   </div>
 
   <div class="muted" id="pluginMessage">
     Plugin management is ready.
   </div>
+
 </section>
 
 <div class="section">
+
   <h3 id="registryTitle">Loaded plugins</h3>
 
   <div class="toolbar">
+
     <input
       id="search"
       placeholder="Search commands..."
@@ -399,11 +608,15 @@ footer {
     <select id="category">
       <option value="">All categories</option>
     </select>
+
   </div>
+
 </div>
 
 <section class="plugins" id="plugins">
-  <div class="card muted">Loading plugin registry...</div>
+  <div class="card muted">
+    Loading plugin registry...
+  </div>
 </section>
 
 <footer>
@@ -417,6 +630,20 @@ footer {
 <script>
 'use strict';
 
+// ==========================================
+// CONFIGURATION
+// ==========================================
+
+// Dashboard password is stored in this file.
+// This is a client-side access gate, not a
+// substitute for backend authentication.
+
+const DASHBOARD_PASSWORD = 'harare@2030';
+
+// ==========================================
+// STATE
+// ==========================================
+
 const $ = id => document.getElementById(id);
 
 let allPlugins = [];
@@ -426,6 +653,13 @@ let currentView = 'plugins';
 let dashboardToken = '';
 
 let refreshRunning = false;
+let isAuthenticated = false;
+let refreshTimer = null;
+let commandTimer = null;
+
+// ==========================================
+// HELPERS
+// ==========================================
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -472,20 +706,141 @@ function setInfo(element, rows) {
   `).join('');
 }
 
+// ==========================================
+// AUTHENTICATION
+// ==========================================
+
+function unlockDashboard(password) {
+
+  if (password !== DASHBOARD_PASSWORD) {
+    $('loginError').textContent =
+      'Incorrect password. Please try again.';
+
+    $('dashboardPassword').value = '';
+
+    $('dashboardPassword').focus();
+
+    return false;
+  }
+
+  dashboardToken = password;
+
+  isAuthenticated = true;
+
+  $('loginError').textContent = '';
+
+  $('loginScreen').classList.add('hidden');
+
+  $('dashboard').classList.remove('hidden');
+
+  $('dashboardPassword').value = '';
+
+  startDashboard();
+
+  return true;
+}
+
+function lockDashboard() {
+
+  isAuthenticated = false;
+
+  dashboardToken = '';
+
+  allPlugins = [];
+  allCommands = [];
+
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+
+  if (commandTimer) {
+    clearInterval(commandTimer);
+    commandTimer = null;
+  }
+
+  $('dashboard').classList.add('hidden');
+
+  $('loginScreen').classList.remove('hidden');
+
+  $('plugins').innerHTML =
+    '<div class="card muted">Dashboard locked.</div>';
+
+  $('dashboardPassword').value = '';
+
+  $('loginError').textContent = '';
+
+  $('dashboardPassword').focus();
+}
+
+$('loginForm').addEventListener('submit', event => {
+
+  event.preventDefault();
+
+  const password = $('dashboardPassword').value;
+
+  if (!password) {
+    $('loginError').textContent =
+      'Please enter your password.';
+
+    return;
+  }
+
+  $('loginButton').disabled = true;
+
+  $('loginButton').textContent = 'VERIFYING...';
+
+  try {
+    unlockDashboard(password);
+  } finally {
+    $('loginButton').disabled = false;
+
+    $('loginButton').textContent =
+      'UNLOCK DASHBOARD';
+  }
+
+});
+
+$('togglePassword').addEventListener('click', () => {
+
+  const input = $('dashboardPassword');
+
+  const visible = input.type === 'text';
+
+  input.type = visible ? 'password' : 'text';
+
+  $('togglePassword').textContent =
+    visible ? 'Show' : 'Hide';
+
+});
+
+$('logout').addEventListener('click', lockDashboard);
+
+// ==========================================
+// API
+// ==========================================
+
 async function api(url, options = {}) {
+
+  if (!isAuthenticated) {
+    throw new Error('Dashboard authentication required.');
+  }
+
   const headers = {
     ...(options.headers || {})
   };
 
-  if (dashboardToken) {
-    headers['x-dashboard-token'] = dashboardToken;
-  }
+  headers['x-dashboard-token'] = dashboardToken;
 
   const response = await fetch(url, {
     ...options,
     headers,
     cache:'no-store'
   });
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error('401: Dashboard authentication failed.');
+  }
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
@@ -494,12 +849,18 @@ async function api(url, options = {}) {
   return response.json();
 }
 
+// ==========================================
+// DASHBOARD REFRESH
+// ==========================================
+
 async function refresh() {
-  if (refreshRunning) return;
+
+  if (!isAuthenticated || refreshRunning) return;
 
   refreshRunning = true;
 
   try {
+
     const [dashboard,plugins,health] = await Promise.all([
       api('/api/dashboard'),
       api('/api/plugins'),
@@ -508,53 +869,90 @@ async function refresh() {
 
     allPlugins = Array.isArray(plugins)
       ? plugins
-      : plugins.plugins || [];
+      : Array.isArray(plugins.plugins)
+        ? plugins.plugins
+        : [];
 
     updateDashboard(dashboard);
+
     updateHealth(health);
 
-    // System information is protected.
-    // Request the token only when it is needed.
     try {
+
       const system = await api('/api/system');
+
       updateSystem(system);
+
     } catch (error) {
-      if (error.message.includes('401')) {
+
+      if (
+        error.message.includes('401') ||
+        error.message.includes('403')
+      ) {
+
         $('systemInfo').innerHTML =
-          '<div class="muted">Dashboard token required to view system details.</div>';
+          '<div class="muted">System API authentication failed. Check the backend dashboard token.</div>';
+
       } else {
+
         throw error;
+
       }
+
     }
 
     renderRegistry();
 
   } catch (error) {
+
     $('connection').textContent = 'API unavailable';
+
     $('dot').className = 'dot off';
 
     $('healthStatus').textContent = 'Unavailable';
+
     $('healthStatus').className = 'error';
 
     $('healthDetails').textContent = error.message;
 
+    console.error('[DASHBOARD]', error);
+
+    if (
+      error.message.includes('401') ||
+      error.message.includes('403')
+    ) {
+
+      $('pluginMessage').textContent =
+        'Authentication failed. The backend must accept the configured dashboard password.';
+
+    }
+
   } finally {
+
     refreshRunning = false;
+
   }
+
 }
 
+// ==========================================
+// DASHBOARD DATA
+// ==========================================
+
 function updateDashboard(data) {
+
   const connected = Boolean(data.bot?.connected);
 
-  $('dot').className = connected ? 'dot on' : 'dot off';
+  $('dot').className =
+    connected ? 'dot on' : 'dot off';
 
-  $('connection').textContent = connected
-    ? 'WhatsApp connected'
-    : 'WhatsApp disconnected';
+  $('connection').textContent =
+    connected
+      ? 'WhatsApp connected'
+      : 'WhatsApp disconnected';
 
-  $('connected').textContent = connected
-    ? 'ONLINE'
-    : 'OFFLINE';
+  $('connected').textContent =
+    connected ? 'ONLINE' : 'OFFLINE';
 
   $('commands').textContent =
     data.plugins?.commands ?? 0;
@@ -566,23 +964,39 @@ function updateDashboard(data) {
     duration(data.system?.uptime);
 
   setInfo('botStats', [
+
     ['Bot',data.bot?.name || 'PRECIOUS-MD'],
+
     ['Owner',data.bot?.owner || 'Watson Fourpence'],
+
     ['Connection',data.bot?.connection || 'Unknown'],
+
     ['Database',data.database?.loaded ? 'Ready':'Loading'],
+
     ['Plugins',data.plugins?.plugins ?? 0],
+
     ['Messages',data.statistics?.messages ?? 0],
+
     ['Errors',data.statistics?.errors ?? 0],
+
     ['Reconnects',data.statistics?.reconnects ?? 0]
+
   ]);
 
   populateCategories(data.plugins?.categories || {});
+
 }
 
+// ==========================================
+// SYSTEM INFORMATION
+// ==========================================
+
 function updateSystem(data) {
+
   const memory = data.memory || {};
 
   const used = Number(memory.heapUsed) || 0;
+
   const total = Number(memory.heapTotal) || 0;
 
   const percent = total
@@ -592,20 +1006,35 @@ function updateSystem(data) {
   $('memoryText').textContent =
     `${bytes(used)} / ${bytes(total)}`;
 
-  $('memoryBar').style.width = `${percent}%`;
+  $('memoryBar').style.width =
+    `${percent}%`;
 
   setInfo('systemInfo', [
+
     ['Node.js',data.process?.version || 'Unknown'],
+
     ['Platform',data.process?.platform || 'Unknown'],
+
     ['Architecture',data.process?.architecture || 'Unknown'],
+
     ['Process ID',data.process?.pid ?? 'Unknown'],
+
     ['CPU user',data.cpu?.user ?? 0],
+
     ['RSS memory',bytes(memory.rss || 0)]
+
   ]);
+
 }
 
+// ==========================================
+// HEALTH
+// ==========================================
+
 function updateHealth(data) {
+
   const healthy = Boolean(data.success);
+
   const connected = Boolean(data.ok);
 
   $('healthStatus').textContent =
@@ -617,19 +1046,30 @@ function updateHealth(data) {
     connected ? 'success' : 'error';
 
   $('healthDetails').textContent =
+
     `Database: ${data.database ? 'Ready':'Waiting'} · ` +
+
     `Plugins: ${data.pluginsLoaded ? 'Ready':'Waiting'} · ` +
+
     `Connection: ${data.connection || 'Unknown'}`;
+
 }
 
+// ==========================================
+// CATEGORIES
+// ==========================================
+
 function populateCategories(categories) {
+
   const select = $('category');
+
   const previous = select.value;
 
   const names = Object.keys(categories).sort();
 
   select.innerHTML =
     '<option value="">All categories</option>' +
+
     names.map(name =>
       `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
     ).join('');
@@ -637,10 +1077,17 @@ function populateCategories(categories) {
   if (names.includes(previous)) {
     select.value = previous;
   }
+
 }
 
+// ==========================================
+// PLUGIN / COMMAND REGISTRY
+// ==========================================
+
 function renderRegistry() {
-  const query = $('search').value.toLowerCase();
+
+  const query = $('search').value.toLowerCase().trim();
+
   const category = $('category').value;
 
   const items = currentView === 'plugins'
@@ -648,18 +1095,28 @@ function renderRegistry() {
     : allCommands;
 
   const filtered = items.filter(item => {
+
     const matchesCategory =
       !category || item.category === category;
 
     const text = [
+
       item.command,
+
       item.name,
+
       item.category,
+
       item.description,
-      ...(item.aliases || [])
+
+      ...(Array.isArray(item.aliases)
+        ? item.aliases
+        : [])
+
     ].join(' ').toLowerCase();
 
     return matchesCategory && text.includes(query);
+
   });
 
   $('registryTitle').textContent =
@@ -668,11 +1125,20 @@ function renderRegistry() {
       : 'Registered commands';
 
   $('plugins').innerHTML = filtered.length
+
     ? filtered.map(item => {
-        const command = item.command || item.name || 'unknown';
+
+        const command =
+          item.command || item.name || 'unknown';
+
+        const aliases = Array.isArray(item.aliases)
+          ? item.aliases
+          : [];
 
         return `
+
           <article class="plugin">
+
             <span class="tag">
               ${escapeHtml(item.category || 'general')}
             </span>
@@ -683,56 +1149,72 @@ function renderRegistry() {
               ${escapeHtml(item.description || 'No description')}
             </small>
 
-            ${item.aliases?.length
+            ${aliases.length
               ? `<small>Aliases: ${
-                  item.aliases.map(escapeHtml).join(', ')
+                  aliases.map(escapeHtml).join(', ')
                 }</small>`
               : ''}
+
           </article>
+
         `;
+
       }).join('')
+
     : '<div class="card muted">No matching entries found.</div>';
+
 }
 
+// ==========================================
+// COMMAND REGISTRY
+// ==========================================
+
 async function loadCommands() {
+
+  if (!isAuthenticated) return;
+
   try {
+
     const data = await api('/api/commands');
 
-    allCommands = data.commands || [];
+    allCommands = Array.isArray(data.commands)
+      ? data.commands
+      : [];
 
     if (currentView === 'commands') {
       renderRegistry();
     }
 
   } catch (error) {
-    console.error('Command registry:',error);
+
+    console.error('[COMMAND REGISTRY]',error);
+
   }
+
 }
 
+// ==========================================
+// PLUGIN RELOAD
+// ==========================================
+
 async function reloadPlugins() {
+
+  if (!isAuthenticated) return;
+
   const message = $('pluginMessage');
 
-  let token = dashboardToken;
-
-  if (!token) {
-    token = prompt('Enter your dashboard token:');
-  }
-
-  if (!token) {
-    message.textContent = 'Dashboard token required.';
-    return;
-  }
-
-  dashboardToken = token;
-
   const button = $('reloadPlugins');
+
   button.disabled = true;
 
   message.textContent = 'Reloading plugins...';
 
   try {
-    const result = await api('/api/plugins/reload',{
+
+    const result = await api('/api/plugins/reload', {
+
       method:'POST'
+
     });
 
     message.textContent =
@@ -741,28 +1223,38 @@ async function reloadPlugins() {
     currentView = 'plugins';
 
     await refresh();
+
     await loadCommands();
 
   } catch (error) {
-    if (error.message.includes('401')) {
-      dashboardToken = '';
-      message.textContent = 'Invalid dashboard token.';
-    } else {
-      message.textContent =
-        'Reload failed: ' + error.message;
-    }
+
+    message.textContent =
+      'Reload failed: ' + error.message;
+
+    console.error('[PLUGIN RELOAD]',error);
 
   } finally {
+
     button.disabled = false;
+
   }
+
 }
 
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
+
 $('refresh').addEventListener('click',async () => {
+
   await refresh();
+
   await loadCommands();
+
 });
 
 $('search').addEventListener('input',renderRegistry);
+
 $('category').addEventListener('change',renderRegistry);
 
 $('reloadPlugins').addEventListener(
@@ -771,21 +1263,72 @@ $('reloadPlugins').addEventListener(
 );
 
 $('showCommands').addEventListener('click',async () => {
+
   currentView = 'commands';
+
   await loadCommands();
+
   renderRegistry();
+
 });
 
 $('showPlugins').addEventListener('click',() => {
+
   currentView = 'plugins';
+
   renderRegistry();
+
 });
 
-refresh();
-loadCommands();
+// ==========================================
+// START DASHBOARD
+// ==========================================
 
-setInterval(refresh,15000);
-setInterval(loadCommands,30000);
+function startDashboard() {
+
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+  }
+
+  if (commandTimer) {
+    clearInterval(commandTimer);
+  }
+
+  refresh();
+
+  loadCommands();
+
+  refreshTimer = setInterval(() => {
+
+    if (isAuthenticated) {
+      refresh();
+    }
+
+  },15000);
+
+  commandTimer = setInterval(() => {
+
+    if (
+      isAuthenticated &&
+      currentView === 'commands'
+    ) {
+      loadCommands();
+    }
+
+  },30000);
+
+}
+
+// ==========================================
+// INITIAL STATE
+// ==========================================
+
+// Dashboard is locked on every page load.
+// Password is not stored in localStorage.
+
+lockDashboard();
+
 </script>
+
 </body>
 </html>
