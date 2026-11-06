@@ -74,6 +74,10 @@ const validLogLevel = value => {
 // OWNER CONFIGURATION
 // ==================================================
 
+// Both numbers receive owner-level access.
+// OWNER_NUMBER is retained for compatibility
+// with existing code that expects one owner.
+
 const ownerNumbers = [
   ...new Set([
     ...csv(process.env.OWNER_NUMBER),
@@ -422,34 +426,6 @@ const config = {
     20,
     1,
     500
-  ),
-
-  // ================================================
-  // LOCAL ANT PORN MODERATION
-  // ================================================
-
-  localPornModeration: bool(
-    process.env.LOCAL_PORN_MODERATION,
-    true
-  ),
-
-  pornModelPath: string(
-    process.env.PORN_MODEL_PATH,
-    './models/nsfw'
-  ),
-
-  pornModerationThreshold: number(
-    process.env.PORN_MODERATION_THRESHOLD,
-    0.75,
-    0.1,
-    1
-  ),
-
-  pornModerationMaxImageMb: number(
-    process.env.PORN_MODERATION_MAX_IMAGE_MB,
-    10,
-    1,
-    30
   ),
 
   // ================================================

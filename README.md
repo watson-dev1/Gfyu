@@ -1,64 +1,69 @@
-# PRECIOUS-MD v2
+# PRECIOUS-MD v3.2.0 Ultimate Edition
 
-**Created by Watson Fourpence.** Modular WhatsApp bot using Node.js 20+ and Baileys 7.0.0-rc14.
+**Created by Watson Fourpence.** A modular WhatsApp automation bot built with Node.js 20+ and Baileys `7.0.0-rc14`.
 
 ## Included
-- Pairing-code login or QR login; multi-file session storage
-- JSON database with atomic writes (`data/database.json`)
-- Plugin loader and command handler
-- List-style menu plus plain-text fallback
-- Group management: tagall, hidetag, invite link, promote, demote, kick, add, group open/close
-- Group settings: anti-link, anti-spam, anti-bad-word toggles, welcome toggle, warning system
-- Owner: public/private, status view/react, anti-call, block/unblock, ban/unban, restart
-- Search: YouTube search, Google search, image search
-- Media: YouTube search and audio/video download through local `yt-dlp`
-- Utilities: calculator, translator, URL shortener, sticker conversion (requires ffmpeg)
-- Health endpoint `/health`
+
+- Pairing-code or QR login for the primary WhatsApp account.
+- Isolated additional WhatsApp sessions managed from the authenticated dashboard.
+- JSON database, plugin loader, command handler, plugin reload, and interactive quick-reply navigation with text fallbacks.
+- More than 100 primary plugin command declarations across general, owner, group, security, AI, media, sticker, utility, translation, TTS, entertainment, and games categories.
+- AI chat client with configurable OpenAI-compatible endpoint, model, API key, timeout, and history settings.
+- YouTube/social media search and download integrations, with local `yt-dlp` support where configured.
+- Group moderation controls, anti-link, anti-spam, anti-badword, warnings, AFK, welcome/goodbye, and group administration tools.
+- Owner tools, premium-user records, backups, automation toggles, reminders, and plugin management.
+- Protected dashboard with connection, runtime, memory, command/plugin registry, and multi-session controls.
+- `/health` and `/ready` monitoring endpoints.
+
+## Requirements
+
+- Node.js 20 or newer.
+- `ffmpeg` and `yt-dlp` installed on the host for local media conversion/download commands.
+- A private hosting environment with persistent storage. WhatsApp auth folders must survive restarts.
 
 ## Setup
-1. Install Node.js 20+.
-2. Install `ffmpeg` and `yt-dlp` on your hosting machine and ensure both are in PATH.
-3. Upload/extract the ZIP.
-4. Copy `.env.example` to `.env`; set `OWNER_NUMBER` and optionally `PAIRING_NUMBER`.
-5. Run `npm install`, then `npm start`.
-6. Read the pairing code from logs. In WhatsApp: Linked devices → Link a device → Link with phone number.
 
-Leave `PAIRING_NUMBER` blank to use QR login. Number format: country code + number, digits only (e.g. `2637XXXXXXXX`, no `+`).
+1. Extract the ZIP.
+2. Copy `.env.example` to `.env` and set `OWNER_NUMBER`, `PAIRING_NUMBER`, and a unique `DASHBOARD_PASSWORD`.
+3. Add your AI provider key to `AI_API_KEY` if you want AI responses. Keep `.env` private.
+4. Run `npm install` and `npm run check`.
+5. Run `npm start`.
+6. Open `http://YOUR-HOST:9090`, sign in using `DASHBOARD_PASSWORD`, and follow the pairing code in the server logs. If `PAIRING_NUMBER` is blank, scan the QR code.
 
-## Commands
-Default prefix `.`. Use `.menu` for categories. Examples:
-`.ping`, `.play song name`, `.ytsearch query`, `.ytmp3 URL`, `.ytmp4 URL`, `.sticker`, `.tagall`, `.group close`, `.antilink on`, `.welcome on`, `.block @user`.
+Phone numbers must include the country code and digits only, for example `2637XXXXXXXX`.
 
-## Plugin format
-Add a `.js` file in `plugins/`:
-```js
-export default {
-  command: 'hello',
-  aliases: ['hi'],
-  description: 'Example',
-  run: async ({ reply, q, sock, chat, msg, sender, isOwner, isGroup }) => {
-    await reply(`Hello ${q || 'there'}!`);
-  }
-};
+## Multi-session manager
+
+The primary bot account continues to use `SESSION_DIR` (default `./session`). Additional accounts are created through the dashboard's **Multi-session manager** panel. Give each account a unique ID and enter its phone number (including country code) to request a pairing code. The manager supports up to five additional accounts. Additional auth data is stored under `./sessions/<session-id>/`. Never share these folders or pairing codes.
+
+Additional sessions share the plugin registry and JSON database and pass incoming messages to the same command handler. They use isolated Baileys auth states, install group-event and automation handlers, and reconnect independently. Reminder scheduling remains attached to the primary session.
+
+## Dashboard security
+
+- `DASHBOARD_PASSWORD` is mandatory. If it is missing, dashboard login is disabled.
+- Dashboard login uses a short-lived, server-signed token. No dashboard password is embedded in `index.html`.
+- Dashboard data, command/plugin registries, system details, plugin reload, and session-management routes require authentication.
+- `/health` and `/ready` are intentionally public for hosting health checks; they expose status only, not credentials or message contents.
+- Use HTTPS or a trusted reverse proxy for public hosting. Do not expose the panel over plain HTTP on an untrusted network.
+
+## Commands and plugins
+
+Use `.menu` to browse categories and `.helpme` for help. Plugins are `.js` modules under `plugins/`; the loader registers primary commands and aliases while ignoring duplicates. Add plugins using the documented plugin object shape in the existing source files, then use the authenticated dashboard's reload control.
+
+## Important operational notes
+
+- Baileys is an unofficial WhatsApp Web client. Use a test account first; automated activity may violate WhatsApp terms or trigger account restrictions.
+- Respect platform rules, copyright, privacy, and local law when downloading or forwarding media. Only download content you own or are authorized to use.
+- AI and media features depend on valid external API credentials, reachable services, and installed host binaries. A command being present does not guarantee a third-party API is online.
+- Back up `session/`, `sessions/`, and `data/` securely. Do not upload auth folders or `.env` to public repositories.
+- Validate the bot in a private test group before enabling moderation or automation in production.
+
+## Baileys package
+
+This release uses the `@itsliaaa/baileys` fork through an npm alias, preserving the existing `@whiskeysockets/baileys` import path throughout the project:
+
+```json
+"@whiskeysockets/baileys": "npm:@itsliaaa/baileys@latest"
 ```
-An array of plugin objects is also supported.
 
-## Important production notes
-- Media downloads require a host that has `yt-dlp` and ffmpeg installed. Source websites may block downloads; use only content you own or are authorized to download and comply with local law and each service's terms. The bot reports failures instead of pretending a download succeeded.
-- `sticker` requires ffmpeg.
-- WhatsApp interactive list rendering varies by client; `.menu` falls back to text if the list message is rejected.
-- Baileys is an unofficial WhatsApp Web client. Use a spare account for testing; WhatsApp can restrict accounts for automation. Keep the session folder secret.
-- Group commands require the bot to be admin. For a public production deployment, add strict group-admin checks to every moderation command and rate limiting. Never expose the pairing code or session files.
-- Runtime toggles are not persisted yet; set defaults in `.env` to keep settings across restarts.
-- This is a substantial functional foundation, not a claim that every feature in the aspirational menu exists. Add modules incrementally and test on a private group first.
-
-
-## Web control center
-The root URL (`/`) serves `index.html`, a read-only dashboard. It reads live status from `/api/dashboard` and command metadata from `/api/plugins`. It does not expose session files, environment variables, API keys, or message contents. Keep the hosting port protected by your platform's access controls if you do not want the status page publicly visible.
-
-## Additional plugins in this build
-- `polls`: `.poll Question | Option 1 | Option 2` and `.pollmulti Question | Option 1 | Option 2`
-- `group-insights`: `.groupinfo`, `.admins`, `.membercount`
-- `extra-tools`: `.uuid`, `.password 16`, `.hashtext text`, `.percentage 15 200`, `.discount 100 20`, `.splitbill 120 4`
-
-AI credentials must be supplied only through `AI_API_KEY` in the hosting environment or a private `.env` file. Never commit `.env` or session files.
+The socket factory is imported as a named export (`makeWASocket`) to match the fork documentation. Install with `npm install` after extracting the project.

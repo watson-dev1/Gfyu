@@ -561,6 +561,25 @@ footer {
 
 </section>
 
+<section class="card" style="margin-top:18px">
+  <div class="section" style="margin-top:0">
+    <h3>Multi-session manager</h3>
+    <span class="muted">Link additional WhatsApp accounts with isolated sessions.</span>
+  </div>
+  <div class="toolbar" style="align-items:end;flex-wrap:wrap">
+    <label style="flex:1;min-width:130px">Session ID
+      <input id="newSessionId" placeholder="e.g. shop-account" maxlength="32">
+    </label>
+    <label style="flex:1;min-width:160px">Phone number (country code)
+      <input id="newSessionPhone" placeholder="2637XXXXXXXX" inputmode="numeric">
+    </label>
+    <button class="btn gold-btn" id="addSession">Start / Pair</button>
+    <button class="btn" id="refreshSessions">Refresh sessions</button>
+  </div>
+  <div id="sessionMessage" class="muted" style="margin:10px 0">Primary WhatsApp session is managed separately.</div>
+  <div id="sessionList" class="plugins"><div class="muted">No additional sessions loaded.</div></div>
+</section>
+
 <section class="two">
 
   <div class="card">
@@ -634,11 +653,8 @@ footer {
 // CONFIGURATION
 // ==========================================
 
-// Dashboard password is stored in this file.
-// This is a client-side access gate, not a
-// substitute for backend authentication.
-
-const DASHBOARD_PASSWORD = 'harare@2030';
+// Authentication is performed by the backend.
+// No password is embedded in this page.
 
 // ==========================================
 // STATE
@@ -710,37 +726,42 @@ function setInfo(element, rows) {
 // AUTHENTICATION
 // ==========================================
 
-function unlockDashboard(password) {
-
-  if (password !== DASHBOARD_PASSWORD) {
-    $('loginError').textContent =
-      'Incorrect password. Please try again.';
-
+async function unlockDashboard(password) {
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+      cache: 'no-store'
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success || !result.token) {
+      $('loginError').textContent = result.error || 'Dashboard login failed.';
+      $('dashboardPassword').value = '';
+      $('dashboardPassword').focus();
+      return false;
+    }
+    dashboardToken = result.token;
+    isAuthenticated = true;
+    $('loginError').textContent = '';
+    $('loginScreen').classList.add('hidden');
+    $('dashboard').classList.remove('hidden');
     $('dashboardPassword').value = '';
-
-    $('dashboardPassword').focus();
-
+    startDashboard();
+    return true;
+  } catch (error) {
+    $('loginError').textContent = 'Cannot reach dashboard authentication service.';
     return false;
   }
-
-  dashboardToken = password;
-
-  isAuthenticated = true;
-
-  $('loginError').textContent = '';
-
-  $('loginScreen').classList.add('hidden');
-
-  $('dashboard').classList.remove('hidden');
-
-  $('dashboardPassword').value = '';
-
-  startDashboard();
-
-  return true;
 }
 
-function lockDashboard() {
+async function lockDashboard() {
+
+  if (dashboardToken) {
+    try {
+      await fetch('/api/logout', { method: 'POST', headers: { 'x-dashboard-token': dashboardToken }, cache: 'no-store' });
+    } catch {}
+  }
 
   isAuthenticated = false;
 
@@ -773,7 +794,7 @@ function lockDashboard() {
   $('dashboardPassword').focus();
 }
 
-$('loginForm').addEventListener('submit', event => {
+$('loginForm').addEventListener('submit', async event => {
 
   event.preventDefault();
 
@@ -791,12 +812,10 @@ $('loginForm').addEventListener('submit', event => {
   $('loginButton').textContent = 'VERIFYING...';
 
   try {
-    unlockDashboard(password);
+    await unlockDashboard(password);
   } finally {
     $('loginButton').disabled = false;
-
-    $('loginButton').textContent =
-      'UNLOCK DASHBOARD';
+    $('loginButton').textContent = 'UNLOCK DASHBOARD';
   }
 
 });
@@ -867,11 +886,7 @@ async function refresh() {
       api('/health')
     ]);
 
-    allPlugins = Array.isArray(plugins)
-      ? plugins
-      : Array.isArray(plugins.plugins)
-        ? plugins.plugins
-        : [];
+    allPlugins = Array.isArray(plugins.plugins) ? plugins.plugins : [];
 
     updateDashboard(dashboard);
 
@@ -1281,6 +1296,65 @@ $('showPlugins').addEventListener('click',() => {
 });
 
 // ==========================================
+// MULTI-SESSION CONTROLS
+// ==========================================
+
+async function refreshSessions() {
+  if (!isAuthenticated) return;
+  try {
+    const data = await api('/api/sessions');
+    const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+    $('sessionList').innerHTML = sessions.length ? sessions.map(session => `
+      <article class="plugin">
+        <span class="tag">${escapeHtml(session.state)}</span>
+        <b>${escapeHtml(session.id)}</b>
+        <small>Account: ${escapeHtml(session.phone || 'Not connected yet')}</small>
+        ${session.pairingCode ? `<small>Pairing code: <b>${escapeHtml(session.pairingCode)}</b></small>` : ''}
+        ${session.lastError ? `<small class="error">${escapeHtml(session.lastError)}</small>` : ''}
+        <button class="btn" data-stop-session="${escapeHtml(session.id)}">Stop session</button>
+      </article>
+    `).join('') : '<div class="muted">No additional sessions yet.</div>';
+    $('sessionList').querySelectorAll('[data-stop-session]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const id = button.getAttribute('data-stop-session');
+        button.disabled = true;
+        try {
+          await api(`/api/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          $('sessionMessage').textContent = `Session ${id} stopped.`;
+          await refreshSessions();
+        } catch (error) { $('sessionMessage').textContent = error.message; button.disabled = false; }
+      });
+    });
+  } catch (error) { $('sessionMessage').textContent = `Session list unavailable: ${error.message}`; }
+}
+
+async function createSession() {
+  const id = $('newSessionId').value.trim();
+  const phoneNumber = $('newSessionPhone').value.trim();
+  if (!id) { $('sessionMessage').textContent = 'Enter a session ID first.'; return; }
+  const button = $('addSession');
+  button.disabled = true;
+  $('sessionMessage').textContent = 'Starting WhatsApp session...';
+  try {
+    const result = await api('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, phoneNumber })
+    });
+    const code = result.session?.pairingCode;
+    $('sessionMessage').textContent = code
+      ? `Session ${id} started. Pairing code: ${code}. Enter it in WhatsApp → Linked devices → Link with phone number.`
+      : `Session ${id} started. Check its status below; if already registered it will reconnect automatically.`;
+    $('newSessionId').value = '';
+    await refreshSessions();
+  } catch (error) { $('sessionMessage').textContent = `Could not start session: ${error.message}`; }
+  finally { button.disabled = false; }
+}
+
+$('addSession').addEventListener('click', createSession);
+$('refreshSessions').addEventListener('click', refreshSessions);
+
+// ==========================================
 // START DASHBOARD
 // ==========================================
 
@@ -1297,6 +1371,7 @@ function startDashboard() {
   refresh();
 
   loadCommands();
+  refreshSessions();
 
   refreshTimer = setInterval(() => {
 
@@ -1324,7 +1399,7 @@ function startDashboard() {
 // ==========================================
 
 // Dashboard is locked on every page load.
-// Password is not stored in localStorage.
+// Dashboard credentials are never embedded or stored in localStorage.
 
 lockDashboard();
 

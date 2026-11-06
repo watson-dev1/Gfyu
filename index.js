@@ -12,7 +12,8 @@ import { fileURLToPath } from 'node:url';
 
 import { Boom } from '@hapi/boom';
 
-import makeWASocket, {
+import {
+  makeWASocket,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
   DisconnectReason,
@@ -26,10 +27,6 @@ import {
 } from './lib/database.js';
 
 import { handleMessage } from './lib/handler.js';
-
-import {
-  loadSecurityModel
-} from './lib/security.js';
 
 import {
   loadPlugins,
@@ -49,6 +46,8 @@ import {
   startReminderScheduler,
   stopReminderScheduler
 } from './lib/reminders.js';
+
+import { createMultiSessionManager } from './lib/multi-session.js';
 
 // ======================================================
 // PROJECT CONFIGURATION
@@ -71,15 +70,20 @@ const DASHBOARD_FILE = path.join(
   'index.html'
 );
 
-// Dashboard password.
-// Change this before exposing the dashboard publicly.
-const DASHBOARD_PASSWORD =
-  process.env.DASHBOARD_PASSWORD || 'harare@2030';
+// Dashboard credentials must be supplied through the environment.
+// Never ship a shared default password in source code.
+const DASHBOARD_PASSWORD = config.dashboardPassword === 'CHANGE_THIS_TO_A_LONG_RANDOM_PASSWORD'
+  ? ''
+  : (config.dashboardPassword || '');
+if (!DASHBOARD_PASSWORD) {
+  logInfo('WARNING: DASHBOARD_PASSWORD is not configured; dashboard login will be disabled.');
+}
 
 // Session lifetime: 12 hours.
 const DASHBOARD_SESSION_TTL = 12 * 60 * 60 * 1000;
 
-// HMAC secret generated at startup.
+// HMAC secret is generated at startup.
+// Existing dashboard sessions expire after restart.
 const DASHBOARD_SESSION_SECRET = crypto.randomBytes(48);
 
 const dashboardSessions = new Map();
@@ -93,8 +97,6 @@ const loginAttempts = new Map();
 
 const MAX_RELOAD_REQUESTS = 500;
 const RELOAD_COOLDOWN = 5000;
-
-const startedAt = Date.now();
 
 // ======================================================
 // GLOBAL STATE
@@ -115,6 +117,8 @@ let reconnectTimer = null;
 let pairingTimer = null;
 
 let shutdownPromise = null;
+
+const startedAt = Date.now();
 
 const processedMessages = new Set();
 const reloadRequests = new Map();
@@ -163,6 +167,13 @@ function logError(label, error) {
     error?.stack || error?.message || error
   );
 }
+
+const multiSessions = createMultiSessionManager({
+  baseDir: path.resolve('./sessions'),
+  onMessage: async (sock, message) => handleMessage(sock, message),
+  onLog: logInfo,
+  logLevel: config.logLevel || 'silent'
+});
 
 // ======================================================
 // SECURITY HELPERS
@@ -417,6 +428,7 @@ app.post('/api/login', (req, res) => {
   const password = req.body?.password;
 
   if (
+    !DASHBOARD_PASSWORD ||
     typeof password !== 'string' ||
     !safeEqual(password, DASHBOARD_PASSWORD)
   ) {
@@ -505,7 +517,7 @@ function getPluginStatistics() {
 // DASHBOARD DATA
 // ======================================================
 
-app.get('/api/dashboard', (_req, res) => {
+app.get('/api/dashboard', protectDashboard, (_req, res) => {
   const pluginStats = getPluginStatistics();
 
   const connected = Boolean(
@@ -546,7 +558,7 @@ app.get('/api/dashboard', (_req, res) => {
 // PLUGIN INFORMATION
 // ======================================================
 
-app.get('/api/plugins', (_req, res) => {
+app.get('/api/plugins', protectDashboard, (_req, res) => {
   const plugins = Array.isArray(globalThis.plugins)
     ? globalThis.plugins
     : [];
@@ -572,7 +584,7 @@ app.get('/api/plugins', (_req, res) => {
 // COMMAND INFORMATION
 // ======================================================
 
-app.get('/api/commands', (_req, res) => {
+app.get('/api/commands', protectDashboard, (_req, res) => {
   const commandMap = globalThis.commandMap instanceof Map
     ? globalThis.commandMap
     : new Map();
@@ -731,6 +743,35 @@ app.post(
     }
   }
 );
+
+// ======================================================
+// MULTI-SESSION MANAGEMENT (DASHBOARD AUTH REQUIRED)
+// ======================================================
+
+app.get('/api/sessions', protectDashboard, (_req, res) => {
+  return res.json({ success: true, sessions: multiSessions.list() });
+});
+
+app.post('/api/sessions', protectDashboard, async (req, res) => {
+  try {
+    const session = await multiSessions.start({
+      id: req.body?.id,
+      phoneNumber: req.body?.phoneNumber || ''
+    });
+    return res.status(201).json({ success: true, session });
+  } catch (error) {
+    return res.status(400).json({ success: false, error: error.message || 'Could not start session.' });
+  }
+});
+
+app.delete('/api/sessions/:id', protectDashboard, async (req, res) => {
+  try {
+    const stoppedSession = await multiSessions.stop(req.params.id);
+    return res.json({ success: stoppedSession, message: stoppedSession ? 'Session stopped.' : 'Session not found.' });
+  } catch (error) {
+    return res.status(400).json({ success: false, error: error.message });
+  }
+});
 
 // ======================================================
 // EXPRESS ERROR HANDLER
@@ -895,43 +936,6 @@ async function initializeProject() {
 }
 
 // ======================================================
-// LOCAL NSFW MODEL INITIALIZATION
-// ======================================================
-
-async function initializeSecurityModel() {
-  const groups = Object.values(
-    globalThis.db?.groups || {}
-  );
-
-  const antiPornEnabled = groups.some(
-    group => group?.antiPorn === true
-  );
-
-  if (!antiPornEnabled) {
-    logInfo(
-      'Local image moderation is idle. The model will load when AntiPorn is first used.'
-    );
-
-    return;
-  }
-
-  try {
-    logInfo('Initializing local NSFW image moderation...');
-
-    await loadSecurityModel();
-
-    logInfo('Local NSFW image moderation is ready.');
-
-  } catch (error) {
-    logError('NSFW MODEL INITIALIZATION', error);
-
-    logInfo(
-      'Bot startup will continue. AntiPorn will fail open until the model becomes available.'
-    );
-  }
-}
-
-// ======================================================
 // MESSAGE DEDUPLICATION
 // ======================================================
 
@@ -1025,10 +1029,6 @@ async function startBot() {
 
   try {
     await initializeProject();
-
-    // Load local NSFWJS only when a group has AntiPorn
-    // enabled. The security module can also load it lazily.
-    await initializeSecurityModel();
 
     const {
       state,
@@ -1336,6 +1336,7 @@ async function shutdown(signal) {
     clearPairingTimer();
 
     stopReminderScheduler();
+    await multiSessions.stopAll();
 
     dashboardSessions.clear();
 
