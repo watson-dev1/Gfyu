@@ -2,7 +2,7 @@ const REPOSITORY = 'watson-dev1/PRECIOUS-MD';
 
 export default [
   {
-    command: 'githubsync', aliases: ['checkupdate', 'update'], category: 'owner', owner: true,
+    command: 'githubsync', aliases: ['checkupdate', 'botupdate'], category: 'owner', owner: true,
     description: 'Check the latest GitHub commit for PRECIOUS-MD',
     run: async ctx => {
       if (!ctx.isOwnerOrSudo) return ctx.reply('Owner only.');
