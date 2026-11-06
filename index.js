@@ -33,9 +33,7 @@ import {
   reloadPlugins
 } from './lib/plugin-loader.js';
 
-import {
-  installEventHandlers
-} from './lib/events.js';
+import { installEventHandlers } from './lib/events.js';
 
 import {
   installAutomationHandlers,
@@ -50,7 +48,7 @@ import {
 import { createMultiSessionManager } from './lib/multi-session.js';
 
 // ======================================================
-// PROJECT CONFIGURATION
+// PRECIOUS-MD v3 — WATSON FOURPENCE
 // ======================================================
 
 globalThis.config = config;
@@ -65,25 +63,252 @@ const SESSION_DIR = path.resolve(
   config.sessionDir || './session'
 );
 
-const DASHBOARD_FILE = path.join(
-  __dirname,
-  'index.html'
-);
+const DASHBOARD_FILE = path.join(__dirname, 'index.html');
 
-// Dashboard credentials must be supplied through the environment.
-// Never ship a shared default password in source code.
-const DASHBOARD_PASSWORD = config.dashboardPassword === 'CHANGE_THIS_TO_A_LONG_RANDOM_PASSWORD'
-  ? ''
-  : (config.dashboardPassword || '');
-if (!DASHBOARD_PASSWORD) {
-  logInfo('WARNING: DASHBOARD_PASSWORD is not configured; dashboard login will be disabled.');
+// ======================================================
+// LOGGING
+// ======================================================
+
+function logInfo(message) {
+  console.log(`[PRECIOUS-MD] ${message}`);
 }
 
-// Session lifetime: 12 hours.
-const DASHBOARD_SESSION_TTL = 12 * 60 * 60 * 1000;
+function logError(label, error) {
+  console.error(
+    `[${label}]`,
+    error?.stack || error?.message || error
+  );
+}
 
-// HMAC secret is generated at startup.
-// Existing dashboard sessions expire after restart.
+// ======================================================
+// SETTINGS CONFIGURATION
+// ======================================================
+
+// These values are captured before database settings are
+// applied. They are used by the dashboard Reset Defaults action.
+
+const DEFAULT_BOT_SETTINGS = Object.freeze({
+  prefix: String(config.prefix || '.'),
+  publicMode: Boolean(config.publicMode),
+
+  readMessages: Boolean(config.readMessages),
+  alwaysOnline: Boolean(config.alwaysOnline),
+  autoTyping: Boolean(config.autoTyping),
+  autoRecording: Boolean(config.autoRecording),
+  autoReact: Boolean(config.autoReact),
+
+  autoViewStatus: Boolean(config.autoViewStatus),
+  autoStatusReact: Boolean(config.autoStatusReact),
+
+  statusEmojis: Array.isArray(config.statusEmojis)
+    ? [...config.statusEmojis]
+    : ['🔥', '❤️', '😂', '💚'],
+
+  antiCall: Boolean(config.antiCall),
+  antiDelete: Boolean(config.antiDelete),
+  antiDeleteMode: config.antiDeleteMode || 'all',
+  antiDeleteNotify: Boolean(config.antiDeleteNotify),
+
+  aiEnabled: Boolean(config.aiEnabled)
+});
+
+const EDITABLE_SETTING_KEYS = new Set(
+  Object.keys(DEFAULT_BOT_SETTINGS)
+);
+
+const BOOLEAN_SETTING_KEYS = new Set([
+  'publicMode',
+  'readMessages',
+  'alwaysOnline',
+  'autoTyping',
+  'autoRecording',
+  'autoReact',
+  'autoViewStatus',
+  'autoStatusReact',
+  'antiCall',
+  'antiDelete',
+  'antiDeleteNotify',
+  'aiEnabled'
+]);
+
+function getDashboardSettings() {
+  const settings = globalThis.db?.settings || {};
+
+  return {
+    prefix: config.prefix || '.',
+    publicMode: Boolean(config.publicMode),
+
+    readMessages: Boolean(config.readMessages),
+    alwaysOnline: Boolean(config.alwaysOnline),
+    autoTyping: Boolean(config.autoTyping),
+    autoRecording: Boolean(config.autoRecording),
+    autoReact: Boolean(config.autoReact),
+
+    autoViewStatus: Boolean(config.autoViewStatus),
+    autoStatusReact: Boolean(config.autoStatusReact),
+
+    statusEmojis: Array.isArray(config.statusEmojis)
+      ? [...config.statusEmojis]
+      : [...DEFAULT_BOT_SETTINGS.statusEmojis],
+
+    antiCall: Boolean(config.antiCall),
+    antiDelete: Boolean(config.antiDelete),
+    antiDeleteMode: config.antiDeleteMode || 'all',
+    antiDeleteNotify: Boolean(config.antiDeleteNotify),
+
+    aiEnabled: Boolean(config.aiEnabled),
+
+    updatedAt: settings.updatedAt || null
+  };
+}
+
+function applyBotSettings(settings = {}) {
+  for (const key of EDITABLE_SETTING_KEYS) {
+    if (settings[key] === undefined) continue;
+
+    config[key] = settings[key];
+  }
+
+  config.prefix = String(config.prefix || '.');
+  config.prefixes = [config.prefix];
+
+  globalThis.config = config;
+}
+
+function validateBotSettings(input) {
+  if (
+    !input ||
+    typeof input !== 'object' ||
+    Array.isArray(input)
+  ) {
+    return {
+      valid: false,
+      error: 'Settings must be sent as a JSON object.'
+    };
+  }
+
+  const updates = {};
+
+  for (const [key, value] of Object.entries(input)) {
+    if (!EDITABLE_SETTING_KEYS.has(key)) {
+      return {
+        valid: false,
+        error: `Unsupported setting: ${key}`
+      };
+    }
+
+    if (BOOLEAN_SETTING_KEYS.has(key)) {
+      if (typeof value !== 'boolean') {
+        return {
+          valid: false,
+          error: `${key} must be true or false.`
+        };
+      }
+
+      updates[key] = value;
+      continue;
+    }
+
+    if (key === 'prefix') {
+      if (
+        typeof value !== 'string' ||
+        value.length < 1 ||
+        value.length > 5 ||
+        /\s/.test(value)
+      ) {
+        return {
+          valid: false,
+          error: 'Prefix must be 1–5 characters with no spaces.'
+        };
+      }
+
+      updates.prefix = value;
+      continue;
+    }
+
+    if (key === 'antiDeleteMode') {
+      if (!['all', 'private', 'group'].includes(value)) {
+        return {
+          valid: false,
+          error: 'Anti-delete mode must be all, private or group.'
+        };
+      }
+
+      updates.antiDeleteMode = value;
+      continue;
+    }
+
+    if (key === 'statusEmojis') {
+      if (
+        !Array.isArray(value) ||
+        value.length < 1 ||
+        value.length > 20 ||
+        value.some(
+          emoji =>
+            typeof emoji !== 'string' ||
+            !emoji.trim() ||
+            emoji.length > 16
+        )
+      ) {
+        return {
+          valid: false,
+          error: 'Status emojis must be an array of 1–20 valid emoji strings.'
+        };
+      }
+
+      updates.statusEmojis = [
+        ...new Set(value.map(item => item.trim()))
+      ];
+
+      continue;
+    }
+  }
+
+  if (!Object.keys(updates).length) {
+    return {
+      valid: false,
+      error: 'No editable settings were supplied.'
+    };
+  }
+
+  return {
+    valid: true,
+    updates
+  };
+}
+
+async function persistBotSettings(updates) {
+  if (!globalThis.db) {
+    throw new Error('Database has not been loaded.');
+  }
+
+  if (
+    !globalThis.db.settings ||
+    typeof globalThis.db.settings !== 'object' ||
+    Array.isArray(globalThis.db.settings)
+  ) {
+    globalThis.db.settings = {};
+  }
+
+  Object.assign(globalThis.db.settings, updates);
+
+  globalThis.db.settings.updatedAt = new Date().toISOString();
+
+  applyBotSettings(globalThis.db.settings);
+
+  await saveDatabase();
+
+  return getDashboardSettings();
+}
+
+// ======================================================
+// DASHBOARD SECURITY
+// ======================================================
+
+const DASHBOARD_PASSWORD =
+  process.env.DASHBOARD_PASSWORD || 'harare @2030';
+
+const DASHBOARD_SESSION_TTL = 12 * 60 * 60 * 1000;
 const DASHBOARD_SESSION_SECRET = crypto.randomBytes(48);
 
 const dashboardSessions = new Map();
@@ -97,6 +322,10 @@ const loginAttempts = new Map();
 
 const MAX_RELOAD_REQUESTS = 500;
 const RELOAD_COOLDOWN = 5000;
+
+const reloadRequests = new Map();
+
+logInfo('Dashboard password authentication enabled.');
 
 // ======================================================
 // GLOBAL STATE
@@ -121,8 +350,6 @@ let shutdownPromise = null;
 const startedAt = Date.now();
 
 const processedMessages = new Set();
-const reloadRequests = new Map();
-
 const MAX_PROCESSED_MESSAGES = 5000;
 
 const stats = {
@@ -148,30 +375,22 @@ const directories = [
 ];
 
 for (const directory of directories) {
-  fs.mkdirSync(directory, {
-    recursive: true
-  });
+  fs.mkdirSync(directory, { recursive: true });
 }
 
 // ======================================================
-// LOGGING
+// MULTI-SESSION MANAGER
 // ======================================================
-
-function logInfo(message) {
-  console.log(`[PRECIOUS-MD] ${message}`);
-}
-
-function logError(label, error) {
-  console.error(
-    `[${label}]`,
-    error?.stack || error?.message || error
-  );
-}
 
 const multiSessions = createMultiSessionManager({
   baseDir: path.resolve('./sessions'),
-  onMessage: async (sock, message) => handleMessage(sock, message),
+
+  onMessage: async (sock, message) => {
+    await handleMessage(sock, message);
+  },
+
   onLog: logInfo,
+
   logLevel: config.logLevel || 'silent'
 });
 
@@ -190,9 +409,7 @@ function safeEqual(first, second) {
   const a = Buffer.from(first);
   const b = Buffer.from(second);
 
-  if (a.length !== b.length) {
-    return false;
-  }
+  if (a.length !== b.length) return false;
 
   return crypto.timingSafeEqual(a, b);
 }
@@ -206,10 +423,7 @@ function signSession(id, expiresAt) {
 
 function createDashboardSession() {
   const id = crypto.randomBytes(32).toString('hex');
-
-  const expiresAt =
-    Date.now() + DASHBOARD_SESSION_TTL;
-
+  const expiresAt = Date.now() + DASHBOARD_SESSION_TTL;
   const signature = signSession(id, expiresAt);
 
   dashboardSessions.set(id, {
@@ -219,9 +433,7 @@ function createDashboardSession() {
 
   while (dashboardSessions.size > MAX_DASHBOARD_SESSIONS) {
     const oldest = dashboardSessions.keys().next().value;
-
     if (!oldest) break;
-
     dashboardSessions.delete(oldest);
   }
 
@@ -239,10 +451,7 @@ function verifyDashboardToken(req) {
   }
 
   const parts = supplied.split('.');
-
-  if (parts.length !== 3) {
-    return false;
-  }
+  if (parts.length !== 3) return false;
 
   const [id, expiresString, signature] = parts;
 
@@ -255,7 +464,6 @@ function verifyDashboardToken(req) {
   }
 
   const session = dashboardSessions.get(id);
-
   if (!session) return false;
 
   const expiresAt = Number(expiresString);
@@ -271,23 +479,21 @@ function verifyDashboardToken(req) {
 
   const expected = signSession(id, expiresAt);
 
-  if (!safeEqual(signature, expected)) {
-    return false;
-  }
-
-  return true;
+  return safeEqual(signature, expected);
 }
 
 function protectDashboard(req, res, next) {
-  if (verifyDashboardToken(req)) {
-    return next();
-  }
+  if (verifyDashboardToken(req)) return next();
 
   return res.status(401).json({
     success: false,
-    error: 'Unauthorized'
+    error: 'Unauthorized. Please login again.'
   });
 }
+
+// ======================================================
+// LOGIN RATE LIMITING
+// ======================================================
 
 function getClientAddress(req) {
   return req.ip || req.socket?.remoteAddress || 'unknown';
@@ -295,19 +501,11 @@ function getClientAddress(req) {
 
 function checkLoginLimit(address) {
   const current = Date.now();
-
   const previous = loginAttempts.get(address);
 
-  if (!previous) {
-    return {
-      allowed: true
-    };
-  }
+  if (!previous) return { allowed: true };
 
-  if (
-    previous.lockedUntil &&
-    current < previous.lockedUntil
-  ) {
+  if (previous.lockedUntil && current < previous.lockedUntil) {
     return {
       allowed: false,
       remaining: Math.ceil(
@@ -316,28 +514,22 @@ function checkLoginLimit(address) {
     };
   }
 
-  if (current - previous.startedAt > LOGIN_WINDOW) {
+  if (
+    current - previous.startedAt > LOGIN_WINDOW ||
+    (previous.lockedUntil && current >= previous.lockedUntil)
+  ) {
     loginAttempts.delete(address);
-
-    return {
-      allowed: true
-    };
+    return { allowed: true };
   }
 
-  return {
-    allowed: true
-  };
+  return { allowed: true };
 }
 
 function recordFailedLogin(address) {
   const current = Date.now();
-
   let record = loginAttempts.get(address);
 
-  if (
-    !record ||
-    current - record.startedAt > LOGIN_WINDOW
-  ) {
+  if (!record || current - record.startedAt > LOGIN_WINDOW) {
     record = {
       attempts: 0,
       startedAt: current,
@@ -348,15 +540,13 @@ function recordFailedLogin(address) {
   record.attempts++;
 
   if (record.attempts >= MAX_LOGIN_ATTEMPTS) {
-    record.lockedUntil =
-      current + LOGIN_LOCK_TIME;
+    record.lockedUntil = current + LOGIN_LOCK_TIME;
   }
 
   loginAttempts.set(address, record);
 
   if (loginAttempts.size > 1000) {
     const oldest = loginAttempts.keys().next().value;
-
     if (oldest) loginAttempts.delete(oldest);
   }
 }
@@ -364,6 +554,10 @@ function recordFailedLogin(address) {
 function clearFailedLogins(address) {
   loginAttempts.delete(address);
 }
+
+// ======================================================
+// SECURITY HEADERS
+// ======================================================
 
 function noCache(_req, res, next) {
   res.set({
@@ -379,13 +573,12 @@ function noCache(_req, res, next) {
 }
 
 // ======================================================
-// EXPRESS DASHBOARD
+// EXPRESS SERVER
 // ======================================================
 
 const app = express();
 
 app.disable('x-powered-by');
-
 app.set('trust proxy', false);
 
 app.use(noCache);
@@ -414,7 +607,6 @@ app.get('/', (_req, res) => {
 
 app.post('/api/login', (req, res) => {
   const address = getClientAddress(req);
-
   const limit = checkLoginLimit(address);
 
   if (!limit.allowed) {
@@ -428,7 +620,6 @@ app.post('/api/login', (req, res) => {
   const password = req.body?.password;
 
   if (
-    !DASHBOARD_PASSWORD ||
     typeof password !== 'string' ||
     !safeEqual(password, DASHBOARD_PASSWORD)
   ) {
@@ -458,7 +649,6 @@ app.post('/api/login', (req, res) => {
 
 app.post('/api/logout', protectDashboard, (req, res) => {
   const supplied = req.headers['x-dashboard-token'];
-
   const [id] = supplied.split('.');
 
   dashboardSessions.delete(id);
@@ -481,7 +671,110 @@ app.get('/api/session', protectDashboard, (_req, res) => {
 });
 
 // ======================================================
-// DASHBOARD PLUGIN STATISTICS
+// SETTINGS API
+// ======================================================
+
+app.get('/api/settings', protectDashboard, (_req, res) => {
+  if (!databaseLoaded) {
+    return res.status(503).json({
+      success: false,
+      error: 'Database is not ready yet.'
+    });
+  }
+
+  return res.json({
+    success: true,
+    settings: getDashboardSettings()
+  });
+});
+
+async function updateSettingsRoute(req, res) {
+  if (!databaseLoaded) {
+    return res.status(503).json({
+      success: false,
+      error: 'Database is not ready yet.'
+    });
+  }
+
+  const validation = validateBotSettings(req.body);
+
+  if (!validation.valid) {
+    return res.status(400).json({
+      success: false,
+      error: validation.error
+    });
+  }
+
+  try {
+    const settings = await persistBotSettings(
+      validation.updates
+    );
+
+    return res.json({
+      success: true,
+      message: 'Settings saved and applied.',
+      settings
+    });
+  } catch (error) {
+    logError('SETTINGS SAVE', error);
+
+    return res.status(500).json({
+      success: false,
+      error: 'Could not save settings to the database.'
+    });
+  }
+}
+
+app.put(
+  '/api/settings',
+  protectDashboard,
+  updateSettingsRoute
+);
+
+app.patch(
+  '/api/settings',
+  protectDashboard,
+  updateSettingsRoute
+);
+
+app.post(
+  '/api/settings/reset',
+  protectDashboard,
+  async (_req, res) => {
+    if (!databaseLoaded) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database is not ready yet.'
+      });
+    }
+
+    try {
+      const resetValues = structuredClone(
+        DEFAULT_BOT_SETTINGS
+      );
+
+      const settings = await persistBotSettings(
+        resetValues
+      );
+
+      return res.json({
+        success: true,
+        message: 'Settings restored to configuration defaults.',
+        settings
+      });
+    } catch (error) {
+      logError('SETTINGS RESET', error);
+
+      return res.status(500).json({
+        success: false,
+        error: 'Could not reset settings.'
+      });
+    }
+  }
+);
+
+// ======================================================
+// PLUGIN STATISTICS
 // ======================================================
 
 function getPluginStatistics() {
@@ -500,9 +793,7 @@ function getPluginStatistics() {
     categories[category] =
       (categories[category] || 0) + 1;
 
-    if (plugin.filename) {
-      files.add(plugin.filename);
-    }
+    if (plugin.filename) files.add(plugin.filename);
   }
 
   return {
@@ -519,10 +810,7 @@ function getPluginStatistics() {
 
 app.get('/api/dashboard', protectDashboard, (_req, res) => {
   const pluginStats = getPluginStatistics();
-
-  const connected = Boolean(
-    globalThis.sock?.user
-  );
+  const connected = Boolean(globalThis.sock?.user);
 
   return res.json({
     success: true,
@@ -549,7 +837,8 @@ app.get('/api/dashboard', protectDashboard, (_req, res) => {
     },
 
     statistics: {
-      ...stats
+      ...stats,
+      startedAt
     }
   });
 });
@@ -565,14 +854,15 @@ app.get('/api/plugins', protectDashboard, (_req, res) => {
 
   return res.json({
     success: true,
-
     total: plugins.length,
 
     plugins: plugins.map(plugin => ({
       command: plugin.command || '',
+
       aliases: Array.isArray(plugin.aliases)
         ? plugin.aliases
         : [],
+
       category: plugin.category || 'general',
       description: plugin.description || '',
       filename: plugin.filename || 'unknown'
@@ -585,9 +875,10 @@ app.get('/api/plugins', protectDashboard, (_req, res) => {
 // ======================================================
 
 app.get('/api/commands', protectDashboard, (_req, res) => {
-  const commandMap = globalThis.commandMap instanceof Map
-    ? globalThis.commandMap
-    : new Map();
+  const commandMap =
+    globalThis.commandMap instanceof Map
+      ? globalThis.commandMap
+      : new Map();
 
   const commands = [];
 
@@ -597,6 +888,7 @@ app.get('/api/commands', protectDashboard, (_req, res) => {
       name,
       category: plugin.category || 'general',
       description: plugin.description || '',
+
       aliases: Array.isArray(plugin.aliases)
         ? plugin.aliases
         : []
@@ -637,7 +929,6 @@ app.get('/api/system', protectDashboard, (_req, res) => {
     },
 
     cpu: process.cpuUsage(),
-
     connection: connectionState
   });
 });
@@ -647,9 +938,7 @@ app.get('/api/system', protectDashboard, (_req, res) => {
 // ======================================================
 
 app.get('/health', (_req, res) => {
-  const connected = Boolean(
-    globalThis.sock?.user
-  );
+  const connected = Boolean(globalThis.sock?.user);
 
   const healthy =
     databaseLoaded &&
@@ -672,7 +961,6 @@ app.get('/health', (_req, res) => {
 
     database: databaseLoaded,
     pluginsLoaded,
-
     retryCount
   });
 });
@@ -719,7 +1007,6 @@ app.post(
 
     if (reloadRequests.size > MAX_RELOAD_REQUESTS) {
       const oldest = reloadRequests.keys().next().value;
-
       if (oldest) reloadRequests.delete(oldest);
     }
 
@@ -732,7 +1019,6 @@ app.post(
         plugins: globalThis.plugins?.length || 0,
         commands: globalThis.commandMap?.size || 0
       });
-
     } catch (error) {
       logError('PLUGIN RELOAD', error);
 
@@ -745,11 +1031,14 @@ app.post(
 );
 
 // ======================================================
-// MULTI-SESSION MANAGEMENT (DASHBOARD AUTH REQUIRED)
+// MULTI-SESSION MANAGEMENT
 // ======================================================
 
 app.get('/api/sessions', protectDashboard, (_req, res) => {
-  return res.json({ success: true, sessions: multiSessions.list() });
+  return res.json({
+    success: true,
+    sessions: multiSessions.list()
+  });
 });
 
 app.post('/api/sessions', protectDashboard, async (req, res) => {
@@ -758,20 +1047,42 @@ app.post('/api/sessions', protectDashboard, async (req, res) => {
       id: req.body?.id,
       phoneNumber: req.body?.phoneNumber || ''
     });
-    return res.status(201).json({ success: true, session });
+
+    return res.status(201).json({
+      success: true,
+      session
+    });
   } catch (error) {
-    return res.status(400).json({ success: false, error: error.message || 'Could not start session.' });
+    return res.status(400).json({
+      success: false,
+      error: error.message || 'Could not start session.'
+    });
   }
 });
 
-app.delete('/api/sessions/:id', protectDashboard, async (req, res) => {
-  try {
-    const stoppedSession = await multiSessions.stop(req.params.id);
-    return res.json({ success: stoppedSession, message: stoppedSession ? 'Session stopped.' : 'Session not found.' });
-  } catch (error) {
-    return res.status(400).json({ success: false, error: error.message });
+app.delete(
+  '/api/sessions/:id',
+  protectDashboard,
+  async (req, res) => {
+    try {
+      const stoppedSession =
+        await multiSessions.stop(req.params.id);
+
+      return res.json({
+        success: stoppedSession,
+
+        message: stoppedSession
+          ? 'Session stopped.'
+          : 'Session not found.'
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
   }
-});
+);
 
 // ======================================================
 // EXPRESS ERROR HANDLER
@@ -792,14 +1103,11 @@ app.use((error, _req, res, _next) => {
 // DASHBOARD SERVER
 // ======================================================
 
-const server = app.listen(
-  PORT,
-  HOST,
-  () => {
-    logInfo(`Dashboard server running on port ${PORT}`);
-    logInfo('Dashboard password authentication enabled.');
-  }
-);
+const server = app.listen(PORT, HOST, () => {
+  logInfo(`Dashboard running on port ${PORT}`);
+  logInfo('Dashboard authentication enabled.');
+  logInfo(`Dashboard URL: http://localhost:${PORT}`);
+});
 
 server.on('error', error => {
   logError('EXPRESS SERVER', error);
@@ -839,7 +1147,6 @@ function cleanupSocket(sock) {
   connectionState = 'disconnected';
 
   clearPairingTimer();
-
   stopReminderScheduler();
 
   try {
@@ -878,14 +1185,9 @@ function getReconnectDelay() {
     Math.min(Math.max(retryCount - 1, 0), 4)
   );
 
-  const jitter = Math.floor(
-    Math.random() * 1500
-  );
+  const jitter = Math.floor(Math.random() * 1500);
 
-  return Math.min(
-    exponential + jitter,
-    60000
-  );
+  return Math.min(exponential + jitter, 60000);
 }
 
 // ======================================================
@@ -900,20 +1202,9 @@ async function initializeProject() {
 
     databaseLoaded = true;
 
-    if (
-      typeof globalThis.db?.settings?.prefix === 'string' &&
-      globalThis.db.settings.prefix.length
-    ) {
-      config.prefix = globalThis.db.settings.prefix;
-      config.prefixes = [config.prefix];
-    }
-
-    if (
-      typeof globalThis.db?.settings?.publicMode === 'boolean'
-    ) {
-      config.publicMode =
-        globalThis.db.settings.publicMode;
-    }
+    // Apply all stored dashboard settings, not only prefix
+    // and public mode.
+    applyBotSettings(globalThis.db?.settings || {});
 
     logInfo('Database loaded.');
   }
@@ -941,7 +1232,6 @@ async function initializeProject() {
 
 function getMessageId(message) {
   const id = message?.key?.id;
-
   if (!id) return null;
 
   const chat = message.key.remoteJid || '';
@@ -952,19 +1242,13 @@ function getMessageId(message) {
 
 function rememberMessage(id) {
   if (!id) return false;
-
-  if (processedMessages.has(id)) {
-    return false;
-  }
+  if (processedMessages.has(id)) return false;
 
   processedMessages.add(id);
 
   if (processedMessages.size > MAX_PROCESSED_MESSAGES) {
     const oldest = processedMessages.values().next().value;
-
-    if (oldest) {
-      processedMessages.delete(oldest);
-    }
+    if (oldest) processedMessages.delete(oldest);
   }
 
   return true;
@@ -976,23 +1260,17 @@ function rememberMessage(id) {
 
 async function processMessage(sock, message) {
   if (!message?.message) return;
-
   if (activeSocket !== sock) return;
 
   const id = getMessageId(message);
 
-  if (id && !rememberMessage(id)) {
-    return;
-  }
+  if (id && !rememberMessage(id)) return;
 
   try {
     stats.messages++;
-
     await handleMessage(sock, message);
-
   } catch (error) {
     stats.errors++;
-
     logError('MESSAGE PROCESSING', error);
   }
 }
@@ -1014,13 +1292,7 @@ function getPairingNumber() {
 // ======================================================
 
 async function startBot() {
-  if (
-    starting ||
-    stopped ||
-    activeSocket
-  ) {
-    return;
-  }
+  if (starting || stopped || activeSocket) return;
 
   starting = true;
   connectionState = 'connecting';
@@ -1033,16 +1305,11 @@ async function startBot() {
     const {
       state,
       saveCreds
-    } = await useMultiFileAuthState(
-      SESSION_DIR
-    );
+    } = await useMultiFileAuthState(SESSION_DIR);
 
-    const { version } =
-      await fetchLatestBaileysVersion();
+    const { version } = await fetchLatestBaileysVersion();
 
-    logInfo(
-      `WhatsApp version: ${version.join('.')}`
-    );
+    logInfo(`WhatsApp version: ${version.join('.')}`);
 
     sock = makeWASocket({
       version,
@@ -1052,26 +1319,18 @@ async function startBot() {
       }),
 
       auth: state,
-
       browser: Browsers.ubuntu('Chrome'),
-
       printQRInTerminal: false,
-
       markOnlineOnConnect: true,
-
       syncFullHistory: false,
-
       generateHighQualityLinkPreview: false,
-
       getMessage: async () => undefined
     });
 
     activeSocket = sock;
     globalThis.sock = sock;
 
-    // ==================================================
     // SAVE CREDENTIALS
-    // ==================================================
 
     sock.ev.on('creds.update', async () => {
       try {
@@ -1081,35 +1340,27 @@ async function startBot() {
       }
     });
 
-    // ==================================================
     // INSTALL EVENT MODULES
-    // ==================================================
 
     installEventHandlers(sock);
     installAutomationHandlers(sock);
 
-    // ==================================================
     // INCOMING MESSAGES
-    // ==================================================
 
     sock.ev.on(
       'messages.upsert',
       async ({ messages, type }) => {
         if (type !== 'notify') return;
-
         if (activeSocket !== sock) return;
 
         for (const message of messages || []) {
           if (activeSocket !== sock) break;
-
           await processMessage(sock, message);
         }
       }
     );
 
-    // ==================================================
     // CONNECTION EVENTS
-    // ==================================================
 
     sock.ev.on(
       'connection.update',
@@ -1122,73 +1373,41 @@ async function startBot() {
           qr
         } = update;
 
-        if (
-          qr &&
-          !getPairingNumber()
-        ) {
+        if (qr && !getPairingNumber()) {
           console.log(
             '\n📱 Scan this QR with WhatsApp Linked Devices:\n'
           );
 
-          qrcode.generate(qr, {
-            small: true
-          });
+          qrcode.generate(qr, { small: true });
         }
 
         if (connection === 'connecting') {
           connectionState = 'connecting';
-
           logInfo('Connecting to WhatsApp...');
         }
-
-        // ==================================================
-        // SUCCESSFUL CONNECTION
-        // ==================================================
 
         if (connection === 'open') {
           starting = false;
           retryCount = 0;
-
           connectionState = 'connected';
 
           clearPairingTimer();
           clearReconnectTimer();
 
-          stats.lastConnected =
-            new Date().toISOString();
+          stats.lastConnected = new Date().toISOString();
 
           console.log('');
           console.log('╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮');
           console.log('┃   PRECIOUS-MD CONNECTED    ┃');
           console.log('╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯');
 
-          console.log(
-            `🤖 Bot: ${config.botName || 'PRECIOUS-MD'}`
-          );
-
-          console.log(
-            `👑 Creator: ${config.ownerName || 'Watson Fourpence'}`
-          );
-
-          console.log(
-            `📱 Account: ${jidNormalizedUser(sock.user.id)}`
-          );
-
-          console.log(
-            `🧩 Plugins: ${globalThis.plugins?.length || 0}`
-          );
-
-          console.log(
-            `⚙️ Commands: ${globalThis.commandMap?.size || 0}`
-          );
-
-          console.log(
-            `🌐 Dashboard: http://localhost:${PORT}`
-          );
-
-          console.log(
-            `❤️ Health: http://localhost:${PORT}/health`
-          );
+          console.log(`🤖 Bot: ${config.botName || 'PRECIOUS-MD'}`);
+          console.log(`👑 Creator: ${config.ownerName || 'Watson Fourpence'}`);
+          console.log(`📱 Account: ${jidNormalizedUser(sock.user.id)}`);
+          console.log(`🧩 Plugins: ${globalThis.plugins?.length || 0}`);
+          console.log(`⚙️ Commands: ${globalThis.commandMap?.size || 0}`);
+          console.log(`🌐 Dashboard: http://localhost:${PORT}`);
+          console.log(`❤️ Health: http://localhost:${PORT}/health`);
 
           try {
             startReminderScheduler(sock);
@@ -1197,13 +1416,8 @@ async function startBot() {
           }
         }
 
-        // ==================================================
-        // CONNECTION CLOSED
-        // ==================================================
-
         if (connection === 'close') {
           starting = false;
-
           clearPairingTimer();
 
           const status = lastDisconnect?.error
@@ -1213,8 +1427,7 @@ async function startBot() {
           const loggedOut =
             status === DisconnectReason.loggedOut;
 
-          stats.lastDisconnected =
-            new Date().toISOString();
+          stats.lastDisconnected = new Date().toISOString();
 
           cleanupSocket(sock);
 
@@ -1236,53 +1449,37 @@ async function startBot() {
           retryCount++;
           stats.reconnects++;
 
-          scheduleReconnect(
-            getReconnectDelay()
-          );
+          scheduleReconnect(getReconnectDelay());
         }
       }
     );
 
-    // ==================================================
     // PAIRING CODE LOGIN
-    // ==================================================
 
     const number = getPairingNumber();
 
-    if (
-      number &&
-      !state.creds.registered
-    ) {
+    if (number && !state.creds.registered) {
       clearPairingTimer();
 
       pairingTimer = setTimeout(async () => {
         pairingTimer = null;
 
-        if (
-          stopped ||
-          activeSocket !== sock ||
-          sock.user
-        ) {
+        if (stopped || activeSocket !== sock || sock.user) {
           return;
         }
 
         try {
-          const code = await sock.requestPairingCode(
-            number
-          );
+          const code = await sock.requestPairingCode(number);
 
           console.log('');
           console.log('╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮');
           console.log('┃   PRECIOUS-MD PAIRING CODE  ┃');
           console.log('╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯');
-
           console.log(`🔐 CODE: ${code}`);
           console.log('');
-
           console.log(
             'Enter this code in WhatsApp Linked Devices.'
           );
-
         } catch (error) {
           logError('PAIRING CODE', error);
         }
@@ -1290,7 +1487,6 @@ async function startBot() {
 
       pairingTimer.unref?.();
     }
-
   } catch (error) {
     starting = false;
 
@@ -1307,9 +1503,7 @@ async function startBot() {
     retryCount++;
     stats.reconnects++;
 
-    scheduleReconnect(
-      getReconnectDelay()
-    );
+    scheduleReconnect(getReconnectDelay());
   }
 }
 
@@ -1318,14 +1512,11 @@ async function startBot() {
 // ======================================================
 
 async function shutdown(signal) {
-  if (shutdownPromise) {
-    return shutdownPromise;
-  }
+  if (shutdownPromise) return shutdownPromise;
 
   shutdownPromise = (async () => {
     stopped = true;
     starting = false;
-
     connectionState = 'stopping';
 
     console.log(
@@ -1336,6 +1527,7 @@ async function shutdown(signal) {
     clearPairingTimer();
 
     stopReminderScheduler();
+
     await multiSessions.stopAll();
 
     dashboardSessions.clear();
@@ -1353,8 +1545,6 @@ async function shutdown(signal) {
       }
     }
 
-    // SAVE DATABASE
-
     try {
       if (databaseLoaded) {
         await saveDatabase();
@@ -1364,8 +1554,6 @@ async function shutdown(signal) {
       logError('DATABASE SHUTDOWN', error);
     }
 
-    // CLOSE WHATSAPP
-
     if (sock) {
       try {
         sock.end(undefined);
@@ -1373,8 +1561,6 @@ async function shutdown(signal) {
         logError('SOCKET SHUTDOWN', error);
       }
     }
-
-    // CLOSE EXPRESS
 
     await new Promise(resolve => {
       if (!server.listening) {
@@ -1409,44 +1595,32 @@ async function shutdown(signal) {
 
 process.on('uncaughtException', error => {
   stats.errors++;
-
   logError('UNCAUGHT EXCEPTION', error);
 });
 
 process.on('unhandledRejection', error => {
   stats.errors++;
-
   logError('UNHANDLED REJECTION', error);
 });
 
-process.on('SIGINT', () => {
-  shutdown('SIGINT');
-});
-
-process.on('SIGTERM', () => {
-  shutdown('SIGTERM');
-});
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ======================================================
 // START APPLICATION
 // ======================================================
 
 console.log('');
+
 console.log('╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮');
 console.log('┃    PRECIOUS-MD STARTING    ┃');
 console.log('╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯');
 
-console.log(
-  `👑 Creator: ${config.ownerName || 'Watson Fourpence'}`
-);
-
-console.log(
-  `🤖 Bot: ${config.botName || 'PRECIOUS-MD'}`
-);
-
-console.log(
-  `🟢 Node.js: ${process.version}`
-);
+console.log(`👑 Creator: ${config.ownerName || 'Watson Fourpence'}`);
+console.log(`🤖 Bot: ${config.botName || 'PRECIOUS-MD'}`);
+console.log(`🟢 Node.js: ${process.version}`);
+console.log(`🌐 Dashboard Port: ${PORT}`);
+console.log('🔐 Dashboard Authentication: ENABLED');
 
 console.log('');
 

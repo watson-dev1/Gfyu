@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,11 +170,7 @@ h1 {
 }
 
 .btn:hover {border-color:var(--gold)}
-
-.btn:disabled {
-  opacity:.5;
-  cursor:not-allowed;
-}
+.btn:disabled {opacity:.5;cursor:not-allowed}
 
 .btn.gold-btn {
   background:linear-gradient(135deg,#e6bd69,#a77c39);
@@ -268,9 +265,145 @@ footer {
   text-align:center;
 }
 
-/* ======================================
-   LOGIN SCREEN
-====================================== */
+/* SETTINGS */
+
+.settings-card {margin-top:18px}
+
+.settings-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.settings-heading h3 {margin:0}
+
+.settings-description {
+  color:var(--muted);
+  font-size:12px;
+  margin-top:5px;
+}
+
+.settings-group {margin-top:24px}
+
+.settings-group h4 {
+  margin:0 0 12px;
+  color:var(--gold);
+  font-size:13px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.settings-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+}
+
+.setting-item {
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:14px;
+  background:#101722;
+  border:1px solid var(--line);
+  border-radius:13px;
+}
+
+.setting-item strong {font-size:13px}
+
+.setting-item small {
+  color:var(--muted);
+  font-size:11px;
+}
+
+.setting-item input:not([type="checkbox"]),
+.setting-item select {
+  width:100%;
+  max-width:100%;
+}
+
+.setting-toggle {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.setting-toggle input[type="checkbox"] {
+  appearance:none;
+  -webkit-appearance:none;
+  position:relative;
+  width:43px;
+  height:24px;
+  min-width:43px;
+  border-radius:30px;
+  background:#343e4d;
+  border:1px solid #465165;
+  padding:0;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.setting-toggle input[type="checkbox"]::after {
+  content:"";
+  position:absolute;
+  width:18px;
+  height:18px;
+  left:2px;
+  top:2px;
+  border-radius:50%;
+  background:#fff;
+  transition:.2s;
+}
+
+.setting-toggle input[type="checkbox"]:checked {
+  background:#a77c39;
+  border-color:var(--gold);
+}
+
+.setting-toggle input[type="checkbox"]:checked::after {
+  transform:translateX(19px);
+}
+
+.settings-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:22px;
+}
+
+.settings-message {
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  margin-top:14px;
+  font-size:12px;
+  color:var(--muted);
+  background:#0d131d;
+}
+
+.settings-message.success {
+  color:var(--green);
+  border-color:#245c47;
+}
+
+.settings-message.error {
+  color:var(--red);
+  border-color:#643737;
+}
+
+.settings-note {
+  color:var(--muted);
+  font-size:11px;
+  margin-top:13px;
+  line-height:1.6;
+}
+
+/* LOGIN */
 
 .login-screen {
   position:fixed;
@@ -309,10 +442,7 @@ footer {
   font-weight:950;
 }
 
-.login-card h2 {
-  margin:0;
-  font-size:25px;
-}
+.login-card h2 {margin:0;font-size:25px}
 
 .login-card p {
   color:var(--muted);
@@ -331,9 +461,7 @@ footer {
   background:#090e17;
 }
 
-.password-box button {
-  flex-shrink:0;
-}
+.password-box button {flex-shrink:0}
 
 .login-button {
   width:100%;
@@ -359,7 +487,7 @@ footer {
 }
 
 @media(max-width:600px) {
-  .plugins,.two {grid-template-columns:1fr}
+  .plugins,.two,.settings-grid {grid-template-columns:1fr}
   .wrap {padding-top:20px}
   .hero {padding:20px}
   .section {align-items:flex-start}
@@ -371,17 +499,12 @@ footer {
 
 <body>
 
-<!-- ======================================
-     PASSWORD LOGIN
-====================================== -->
+<!-- LOGIN -->
 
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
-
     <div class="login-logo">P</div>
-
     <h2>PRECIOUS-MD</h2>
-
     <div class="sub">SECURE CONTROL CENTER</div>
 
     <p>
@@ -390,9 +513,7 @@ footer {
     </p>
 
     <form id="loginForm">
-
       <div class="password-box">
-
         <input
           id="dashboardPassword"
           type="password"
@@ -401,14 +522,9 @@ footer {
           required
         >
 
-        <button
-          type="button"
-          class="btn"
-          id="togglePassword"
-        >
+        <button type="button" class="btn" id="togglePassword">
           Show
         </button>
-
       </div>
 
       <button
@@ -419,12 +535,7 @@ footer {
         UNLOCK DASHBOARD
       </button>
 
-      <div
-        class="login-error"
-        id="loginError"
-        role="alert"
-      ></div>
-
+      <div class="login-error" id="loginError" role="alert"></div>
     </form>
 
     <div class="login-footer">
@@ -432,49 +543,36 @@ footer {
       <br>
       PRECIOUS-MD v3 Security
     </div>
-
   </div>
 </div>
 
-<!-- ======================================
-     DASHBOARD
-====================================== -->
+<!-- DASHBOARD -->
 
 <main class="wrap hidden" id="dashboard">
 
 <header class="top">
-
   <div class="brand">
-
     <div class="logo">P</div>
 
     <div>
       <h1>PRECIOUS-MD</h1>
-
       <div class="sub">
         PREMIUM CONTROL CENTER · WATSON FOURPENCE
       </div>
     </div>
-
   </div>
 
   <div class="toolbar">
-
     <div class="status">
       <span id="dot" class="dot"></span>
       <span id="connection">Checking connection...</span>
     </div>
 
-    <button class="btn" id="logout">
-      Logout
-    </button>
-
+    <button class="btn" id="logout">Logout</button>
   </div>
-
 </header>
 
 <section class="hero">
-
   <div class="label gold">BOT OVERVIEW</div>
 
   <h2>
@@ -483,30 +581,21 @@ footer {
   </h2>
 
   <div class="muted">
-    Monitor your WhatsApp bot, system resources,
-    commands and plugin activity.
+    Monitor and manage your WhatsApp bot, system resources,
+    commands, plugins and settings.
   </div>
 
   <div class="toolbar" style="margin-top:17px">
-
-    <button class="btn" id="refresh">
-      ↻ Refresh
-    </button>
-
-    <button class="btn" id="showCommands">
-      Commands
-    </button>
-
-    <button class="btn" id="showPlugins">
-      Plugins
-    </button>
-
+    <button class="btn" id="refresh">↻ Refresh</button>
+    <button class="btn" id="showCommands">Commands</button>
+    <button class="btn" id="showPlugins">Plugins</button>
+    <button class="btn" id="goSettings">⚙ Settings</button>
   </div>
-
 </section>
 
-<section class="grid">
+<!-- METRICS -->
 
+<section class="grid">
   <div class="card">
     <div class="label">WhatsApp connection</div>
     <div class="metric" id="connected">—</div>
@@ -526,13 +615,12 @@ footer {
     <div class="label">Runtime</div>
     <div class="metric" id="uptime">—</div>
   </div>
-
 </section>
 
+<!-- MEMORY AND HEALTH -->
+
 <section class="two">
-
   <div class="card">
-
     <div class="section" style="margin-top:0">
       <h3>Memory usage</h3>
       <span id="memoryText" class="muted">—</span>
@@ -543,11 +631,9 @@ footer {
     </div>
 
     <small class="muted">Node.js heap usage</small>
-
   </div>
 
   <div class="card">
-
     <div class="section" style="margin-top:0">
       <h3>Bot health</h3>
       <span id="healthStatus" class="success">Checking...</span>
@@ -556,32 +642,44 @@ footer {
     <div id="healthDetails" class="muted">
       Waiting for system information...
     </div>
-
   </div>
-
 </section>
+
+<!-- MULTI SESSION -->
 
 <section class="card" style="margin-top:18px">
   <div class="section" style="margin-top:0">
     <h3>Multi-session manager</h3>
-    <span class="muted">Link additional WhatsApp accounts with isolated sessions.</span>
+    <span class="muted">Manage additional WhatsApp accounts.</span>
   </div>
+
   <div class="toolbar" style="align-items:end;flex-wrap:wrap">
-    <label style="flex:1;min-width:130px">Session ID
+    <label style="flex:1;min-width:130px">
+      Session ID
       <input id="newSessionId" placeholder="e.g. shop-account" maxlength="32">
     </label>
-    <label style="flex:1;min-width:160px">Phone number (country code)
+
+    <label style="flex:1;min-width:160px">
+      Phone number (country code)
       <input id="newSessionPhone" placeholder="2637XXXXXXXX" inputmode="numeric">
     </label>
+
     <button class="btn gold-btn" id="addSession">Start / Pair</button>
     <button class="btn" id="refreshSessions">Refresh sessions</button>
   </div>
-  <div id="sessionMessage" class="muted" style="margin:10px 0">Primary WhatsApp session is managed separately.</div>
-  <div id="sessionList" class="plugins"><div class="muted">No additional sessions loaded.</div></div>
+
+  <div id="sessionMessage" class="muted" style="margin:10px 0">
+    Primary WhatsApp session is managed separately.
+  </div>
+
+  <div id="sessionList" class="plugins">
+    <div class="muted">No additional sessions loaded.</div>
+  </div>
 </section>
 
-<section class="two">
+<!-- SYSTEM INFORMATION -->
 
+<section class="two">
   <div class="card">
     <h3>System information</h3>
     <div id="systemInfo"></div>
@@ -591,33 +689,236 @@ footer {
     <h3>Bot statistics</h3>
     <div id="botStats"></div>
   </div>
-
 </section>
 
+<!-- SETTINGS CENTER -->
+
+<section class="card settings-card" id="settingsCenter">
+  <div class="settings-heading">
+    <div>
+      <h3>⚙️ Settings Center</h3>
+
+      <div class="settings-description">
+        Configure PRECIOUS-MD without editing your configuration files.
+      </div>
+    </div>
+
+    <span class="tag">BOT CONFIGURATION</span>
+  </div>
+
+  <!-- GENERAL -->
+
+  <div class="settings-group">
+    <h4>General settings</h4>
+
+    <div class="settings-grid">
+      <label class="setting-item">
+        <strong>Command prefix</strong>
+        <input id="setPrefix" maxlength="5" placeholder=".">
+        <small>Example: . ! # / — maximum 5 characters.</small>
+      </label>
+
+      <label class="setting-item">
+        <strong>Bot operating mode</strong>
+
+        <select id="setPublicMode">
+          <option value="true">Public mode</option>
+          <option value="false">Private mode</option>
+        </select>
+
+        <small>
+          Private mode restricts commands according to your handler permissions.
+        </small>
+      </label>
+    </div>
+  </div>
+
+  <!-- AUTOMATION -->
+
+  <div class="settings-group">
+    <h4>WhatsApp automation</h4>
+
+    <div class="settings-grid">
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Auto read messages</strong>
+          <input type="checkbox" id="setReadMessages">
+        </div>
+        <small>Automatically mark incoming messages as read.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Always online</strong>
+          <input type="checkbox" id="setAlwaysOnline">
+        </div>
+        <small>Keep the bot's presence online.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Auto typing</strong>
+          <input type="checkbox" id="setAutoTyping">
+        </div>
+        <small>Show typing while processing messages.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Auto recording</strong>
+          <input type="checkbox" id="setAutoRecording">
+        </div>
+        <small>Show recording presence when processing audio.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Auto view statuses</strong>
+          <input type="checkbox" id="setAutoViewStatus">
+        </div>
+        <small>Automatically view WhatsApp statuses.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Status reactions</strong>
+          <input type="checkbox" id="setAutoStatusReact">
+        </div>
+        <small>React to viewed statuses automatically.</small>
+      </label>
+
+      <label class="setting-item">
+        <strong>Status reaction emojis</strong>
+        <input
+          id="setStatusEmojis"
+          maxlength="200"
+          placeholder="🔥, ❤️, 😂, 💚"
+        >
+        <small>Separate multiple emojis with commas.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Auto message reactions</strong>
+          <input type="checkbox" id="setAutoReact">
+        </div>
+        <small>Enable automatic message reactions.</small>
+      </label>
+
+    </div>
+  </div>
+
+  <!-- SECURITY -->
+
+  <div class="settings-group">
+    <h4>Security protection</h4>
+
+    <div class="settings-grid">
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Anti-call</strong>
+          <input type="checkbox" id="setAntiCall">
+        </div>
+        <small>Enable incoming call protection.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Anti-delete</strong>
+          <input type="checkbox" id="setAntiDelete">
+        </div>
+        <small>Enable deleted-message handling.</small>
+      </label>
+
+      <label class="setting-item">
+        <strong>Anti-delete mode</strong>
+        <select id="setAntiDeleteMode">
+          <option value="all">All chats</option>
+          <option value="private">Private chats only</option>
+          <option value="group">Groups only</option>
+        </select>
+        <small>Choose where anti-delete is active.</small>
+      </label>
+
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>Anti-delete notifications</strong>
+          <input type="checkbox" id="setAntiDeleteNotify">
+        </div>
+        <small>Notify when deleted messages are detected.</small>
+      </label>
+
+    </div>
+  </div>
+
+  <!-- AI -->
+
+  <div class="settings-group">
+    <h4>Artificial intelligence</h4>
+
+    <div class="settings-grid">
+      <label class="setting-item">
+        <div class="setting-toggle">
+          <strong>AI enabled</strong>
+          <input type="checkbox" id="setAIEnabled">
+        </div>
+        <small>Enable the AI feature where supported by your AI handler.</small>
+      </label>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+
+  <div class="settings-actions">
+    <button class="btn gold-btn" id="saveBotSettings">
+      Save settings
+    </button>
+
+    <button class="btn" id="reloadBotSettings">
+      ↻ Reload settings
+    </button>
+
+    <button class="btn" id="resetBotSettings">
+      Reset defaults
+    </button>
+  </div>
+
+  <div class="settings-message" id="settingsMessage" role="status">
+    Settings have not been loaded yet.
+  </div>
+
+  <div class="settings-note">
+    Settings are saved in your database and applied to the running configuration.
+    Some event-based features may require a WhatsApp reconnect before their
+    behaviour changes. Anti-link, anti-spam and anti-bad-words are group-specific
+    in your current database and are not global dashboard settings.
+  </div>
+</section>
+
+<!-- PLUGIN MANAGEMENT -->
+
 <section class="card" style="margin-top:18px">
-
   <div class="section" style="margin-top:0">
-
     <h3>Plugin management</h3>
 
     <button class="btn gold-btn" id="reloadPlugins">
       ↻ Reload plugins
     </button>
-
   </div>
 
   <div class="muted" id="pluginMessage">
     Plugin management is ready.
   </div>
-
 </section>
 
-<div class="section">
+<!-- REGISTRY -->
 
+<div class="section">
   <h3 id="registryTitle">Loaded plugins</h3>
 
   <div class="toolbar">
-
     <input
       id="search"
       placeholder="Search commands..."
@@ -627,15 +928,11 @@ footer {
     <select id="category">
       <option value="">All categories</option>
     </select>
-
   </div>
-
 </div>
 
 <section class="plugins" id="plugins">
-  <div class="card muted">
-    Loading plugin registry...
-  </div>
+  <div class="card muted">Loading plugin registry...</div>
 </section>
 
 <footer>
@@ -649,16 +946,9 @@ footer {
 <script>
 'use strict';
 
-// ==========================================
-// CONFIGURATION
-// ==========================================
-
-// Authentication is performed by the backend.
-// No password is embedded in this page.
-
-// ==========================================
+// ==================================================
 // STATE
-// ==========================================
+// ==================================================
 
 const $ = id => document.getElementById(id);
 
@@ -670,12 +960,13 @@ let dashboardToken = '';
 
 let refreshRunning = false;
 let isAuthenticated = false;
+
 let refreshTimer = null;
 let commandTimer = null;
 
-// ==========================================
+// ==================================================
 // HELPERS
-// ==========================================
+// ==================================================
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -722,49 +1013,73 @@ function setInfo(element, rows) {
   `).join('');
 }
 
-// ==========================================
+function showSettingsMessage(message, type = '') {
+  const element = $('settingsMessage');
+
+  element.textContent = message;
+
+  element.className =
+    'settings-message' + (type ? ' ' + type : '');
+}
+
+// ==================================================
 // AUTHENTICATION
-// ==========================================
+// ==================================================
 
 async function unlockDashboard(password) {
   try {
     const response = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-      cache: 'no-store'
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password}),
+      cache:'no-store'
     });
+
     const result = await response.json().catch(() => ({}));
+
     if (!response.ok || !result.success || !result.token) {
-      $('loginError').textContent = result.error || 'Dashboard login failed.';
+      $('loginError').textContent =
+        result.error || 'Dashboard login failed.';
+
       $('dashboardPassword').value = '';
       $('dashboardPassword').focus();
+
       return false;
     }
+
     dashboardToken = result.token;
     isAuthenticated = true;
+
     $('loginError').textContent = '';
+
     $('loginScreen').classList.add('hidden');
     $('dashboard').classList.remove('hidden');
+
     $('dashboardPassword').value = '';
+
     startDashboard();
+
     return true;
-  } catch (error) {
-    $('loginError').textContent = 'Cannot reach dashboard authentication service.';
+  } catch {
+    $('loginError').textContent =
+      'Cannot reach dashboard authentication service.';
+
     return false;
   }
 }
 
 async function lockDashboard() {
-
   if (dashboardToken) {
     try {
-      await fetch('/api/logout', { method: 'POST', headers: { 'x-dashboard-token': dashboardToken }, cache: 'no-store' });
+      await fetch('/api/logout', {
+        method:'POST',
+        headers:{'x-dashboard-token':dashboardToken},
+        cache:'no-store'
+      });
     } catch {}
   }
 
   isAuthenticated = false;
-
   dashboardToken = '';
 
   allPlugins = [];
@@ -781,21 +1096,18 @@ async function lockDashboard() {
   }
 
   $('dashboard').classList.add('hidden');
-
   $('loginScreen').classList.remove('hidden');
 
   $('plugins').innerHTML =
     '<div class="card muted">Dashboard locked.</div>';
 
   $('dashboardPassword').value = '';
-
   $('loginError').textContent = '';
 
   $('dashboardPassword').focus();
 }
 
 $('loginForm').addEventListener('submit', async event => {
-
   event.preventDefault();
 
   const password = $('dashboardPassword').value;
@@ -808,7 +1120,6 @@ $('loginForm').addEventListener('submit', async event => {
   }
 
   $('loginButton').disabled = true;
-
   $('loginButton').textContent = 'VERIFYING...';
 
   try {
@@ -817,39 +1128,33 @@ $('loginForm').addEventListener('submit', async event => {
     $('loginButton').disabled = false;
     $('loginButton').textContent = 'UNLOCK DASHBOARD';
   }
-
 });
 
 $('togglePassword').addEventListener('click', () => {
-
   const input = $('dashboardPassword');
-
   const visible = input.type === 'text';
 
   input.type = visible ? 'password' : 'text';
 
   $('togglePassword').textContent =
     visible ? 'Show' : 'Hide';
-
 });
 
 $('logout').addEventListener('click', lockDashboard);
 
-// ==========================================
+// ==================================================
 // API
-// ==========================================
+// ==================================================
 
 async function api(url, options = {}) {
-
   if (!isAuthenticated) {
     throw new Error('Dashboard authentication required.');
   }
 
   const headers = {
-    ...(options.headers || {})
+    ...(options.headers || {}),
+    'x-dashboard-token':dashboardToken
   };
-
-  headers['x-dashboard-token'] = dashboardToken;
 
   const response = await fetch(url, {
     ...options,
@@ -861,110 +1166,79 @@ async function api(url, options = {}) {
     throw new Error('401: Dashboard authentication failed.');
   }
 
+  const result = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    throw new Error(
+      result.error || `API error: ${response.status}`
+    );
   }
 
-  return response.json();
+  return result;
 }
 
-// ==========================================
+// ==================================================
 // DASHBOARD REFRESH
-// ==========================================
+// ==================================================
 
 async function refresh() {
-
   if (!isAuthenticated || refreshRunning) return;
 
   refreshRunning = true;
 
   try {
-
     const [dashboard,plugins,health] = await Promise.all([
       api('/api/dashboard'),
       api('/api/plugins'),
       api('/health')
     ]);
 
-    allPlugins = Array.isArray(plugins.plugins) ? plugins.plugins : [];
+    allPlugins = Array.isArray(plugins.plugins)
+      ? plugins.plugins
+      : [];
 
     updateDashboard(dashboard);
-
     updateHealth(health);
 
-    try {
+    const system = await api('/api/system');
 
-      const system = await api('/api/system');
-
-      updateSystem(system);
-
-    } catch (error) {
-
-      if (
-        error.message.includes('401') ||
-        error.message.includes('403')
-      ) {
-
-        $('systemInfo').innerHTML =
-          '<div class="muted">System API authentication failed. Check the backend dashboard token.</div>';
-
-      } else {
-
-        throw error;
-
-      }
-
-    }
-
+    updateSystem(system);
     renderRegistry();
-
   } catch (error) {
-
     $('connection').textContent = 'API unavailable';
-
     $('dot').className = 'dot off';
 
     $('healthStatus').textContent = 'Unavailable';
-
     $('healthStatus').className = 'error';
 
     $('healthDetails').textContent = error.message;
 
-    console.error('[DASHBOARD]', error);
+    console.error('[DASHBOARD]',error);
 
     if (
       error.message.includes('401') ||
       error.message.includes('403')
     ) {
-
       $('pluginMessage').textContent =
-        'Authentication failed. The backend must accept the configured dashboard password.';
-
+        'Authentication failed. Please check your dashboard session.';
     }
-
   } finally {
-
     refreshRunning = false;
-
   }
-
 }
 
-// ==========================================
+// ==================================================
 // DASHBOARD DATA
-// ==========================================
+// ==================================================
 
 function updateDashboard(data) {
-
   const connected = Boolean(data.bot?.connected);
 
   $('dot').className =
     connected ? 'dot on' : 'dot off';
 
   $('connection').textContent =
-    connected
-      ? 'WhatsApp connected'
-      : 'WhatsApp disconnected';
+    connected ? 'WhatsApp connected' : 'WhatsApp disconnected';
 
   $('connected').textContent =
     connected ? 'ONLINE' : 'OFFLINE';
@@ -979,39 +1253,27 @@ function updateDashboard(data) {
     duration(data.system?.uptime);
 
   setInfo('botStats', [
-
     ['Bot',data.bot?.name || 'PRECIOUS-MD'],
-
     ['Owner',data.bot?.owner || 'Watson Fourpence'],
-
     ['Connection',data.bot?.connection || 'Unknown'],
-
     ['Database',data.database?.loaded ? 'Ready':'Loading'],
-
     ['Plugins',data.plugins?.plugins ?? 0],
-
     ['Messages',data.statistics?.messages ?? 0],
-
     ['Errors',data.statistics?.errors ?? 0],
-
     ['Reconnects',data.statistics?.reconnects ?? 0]
-
   ]);
 
   populateCategories(data.plugins?.categories || {});
-
 }
 
-// ==========================================
+// ==================================================
 // SYSTEM INFORMATION
-// ==========================================
+// ==================================================
 
 function updateSystem(data) {
-
   const memory = data.memory || {};
 
   const used = Number(memory.heapUsed) || 0;
-
   const total = Number(memory.heapTotal) || 0;
 
   const percent = total
@@ -1025,31 +1287,21 @@ function updateSystem(data) {
     `${percent}%`;
 
   setInfo('systemInfo', [
-
     ['Node.js',data.process?.version || 'Unknown'],
-
     ['Platform',data.process?.platform || 'Unknown'],
-
     ['Architecture',data.process?.architecture || 'Unknown'],
-
     ['Process ID',data.process?.pid ?? 'Unknown'],
-
     ['CPU user',data.cpu?.user ?? 0],
-
     ['RSS memory',bytes(memory.rss || 0)]
-
   ]);
-
 }
 
-// ==========================================
+// ==================================================
 // HEALTH
-// ==========================================
+// ==================================================
 
 function updateHealth(data) {
-
   const healthy = Boolean(data.success);
-
   const connected = Boolean(data.ok);
 
   $('healthStatus').textContent =
@@ -1061,30 +1313,23 @@ function updateHealth(data) {
     connected ? 'success' : 'error';
 
   $('healthDetails').textContent =
-
     `Database: ${data.database ? 'Ready':'Waiting'} · ` +
-
     `Plugins: ${data.pluginsLoaded ? 'Ready':'Waiting'} · ` +
-
     `Connection: ${data.connection || 'Unknown'}`;
-
 }
 
-// ==========================================
+// ==================================================
 // CATEGORIES
-// ==========================================
+// ==================================================
 
 function populateCategories(categories) {
-
   const select = $('category');
-
   const previous = select.value;
 
   const names = Object.keys(categories).sort();
 
   select.innerHTML =
     '<option value="">All categories</option>' +
-
     names.map(name =>
       `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
     ).join('');
@@ -1092,17 +1337,14 @@ function populateCategories(categories) {
   if (names.includes(previous)) {
     select.value = previous;
   }
-
 }
 
-// ==========================================
+// ==================================================
 // PLUGIN / COMMAND REGISTRY
-// ==========================================
+// ==================================================
 
 function renderRegistry() {
-
   const query = $('search').value.toLowerCase().trim();
-
   const category = $('category').value;
 
   const items = currentView === 'plugins'
@@ -1110,28 +1352,18 @@ function renderRegistry() {
     : allCommands;
 
   const filtered = items.filter(item => {
-
     const matchesCategory =
       !category || item.category === category;
 
     const text = [
-
       item.command,
-
       item.name,
-
       item.category,
-
       item.description,
-
-      ...(Array.isArray(item.aliases)
-        ? item.aliases
-        : [])
-
+      ...(Array.isArray(item.aliases) ? item.aliases : [])
     ].join(' ').toLowerCase();
 
     return matchesCategory && text.includes(query);
-
   });
 
   $('registryTitle').textContent =
@@ -1140,9 +1372,7 @@ function renderRegistry() {
       : 'Registered commands';
 
   $('plugins').innerHTML = filtered.length
-
     ? filtered.map(item => {
-
         const command =
           item.command || item.name || 'unknown';
 
@@ -1151,14 +1381,12 @@ function renderRegistry() {
           : [];
 
         return `
-
           <article class="plugin">
-
             <span class="tag">
               ${escapeHtml(item.category || 'general')}
             </span>
 
-            <b>.${escapeHtml(command)}</b>
+            <b>${escapeHtml(command)}</b>
 
             <small>
               ${escapeHtml(item.description || 'No description')}
@@ -1169,27 +1397,20 @@ function renderRegistry() {
                   aliases.map(escapeHtml).join(', ')
                 }</small>`
               : ''}
-
           </article>
-
         `;
-
       }).join('')
-
     : '<div class="card muted">No matching entries found.</div>';
-
 }
 
-// ==========================================
+// ==================================================
 // COMMAND REGISTRY
-// ==========================================
+// ==================================================
 
 async function loadCommands() {
-
   if (!isAuthenticated) return;
 
   try {
-
     const data = await api('/api/commands');
 
     allCommands = Array.isArray(data.commands)
@@ -1199,37 +1420,27 @@ async function loadCommands() {
     if (currentView === 'commands') {
       renderRegistry();
     }
-
   } catch (error) {
-
     console.error('[COMMAND REGISTRY]',error);
-
   }
-
 }
 
-// ==========================================
+// ==================================================
 // PLUGIN RELOAD
-// ==========================================
+// ==================================================
 
 async function reloadPlugins() {
-
   if (!isAuthenticated) return;
 
   const message = $('pluginMessage');
-
   const button = $('reloadPlugins');
 
   button.disabled = true;
-
   message.textContent = 'Reloading plugins...';
 
   try {
-
     const result = await api('/api/plugins/reload', {
-
       method:'POST'
-
     });
 
     message.textContent =
@@ -1238,168 +1449,409 @@ async function reloadPlugins() {
     currentView = 'plugins';
 
     await refresh();
-
     await loadCommands();
-
   } catch (error) {
-
-    message.textContent =
-      'Reload failed: ' + error.message;
-
+    message.textContent = 'Reload failed: ' + error.message;
     console.error('[PLUGIN RELOAD]',error);
-
   } finally {
-
     button.disabled = false;
-
   }
-
 }
 
-// ==========================================
-// EVENT LISTENERS
-// ==========================================
+// ==================================================
+// SETTINGS CENTER
+// ==================================================
+
+const settingElements = {
+  prefix:'setPrefix',
+  publicMode:'setPublicMode',
+
+  readMessages:'setReadMessages',
+  alwaysOnline:'setAlwaysOnline',
+  autoTyping:'setAutoTyping',
+  autoRecording:'setAutoRecording',
+  autoReact:'setAutoReact',
+
+  autoViewStatus:'setAutoViewStatus',
+  autoStatusReact:'setAutoStatusReact',
+  statusEmojis:'setStatusEmojis',
+
+  antiCall:'setAntiCall',
+  antiDelete:'setAntiDelete',
+  antiDeleteMode:'setAntiDeleteMode',
+  antiDeleteNotify:'setAntiDeleteNotify',
+
+  aiEnabled:'setAIEnabled'
+};
+
+function setSettingValue(id,value) {
+  const element = $(id);
+
+  if (!element) return;
+
+  if (element.type === 'checkbox') {
+    element.checked = Boolean(value);
+  } else if (element.tagName === 'SELECT' && typeof value === 'boolean') {
+    element.value = String(value);
+  } else if (Array.isArray(value)) {
+    element.value = value.join(', ');
+  } else {
+    element.value = value ?? '';
+  }
+}
+
+function readSettingsForm() {
+  const statusEmojis = $('setStatusEmojis')
+    .value
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  return {
+    prefix:$('setPrefix').value.trim(),
+
+    publicMode:$('setPublicMode').value === 'true',
+
+    readMessages:$('setReadMessages').checked,
+    alwaysOnline:$('setAlwaysOnline').checked,
+    autoTyping:$('setAutoTyping').checked,
+    autoRecording:$('setAutoRecording').checked,
+    autoReact:$('setAutoReact').checked,
+
+    autoViewStatus:$('setAutoViewStatus').checked,
+    autoStatusReact:$('setAutoStatusReact').checked,
+    statusEmojis,
+
+    antiCall:$('setAntiCall').checked,
+    antiDelete:$('setAntiDelete').checked,
+    antiDeleteMode:$('setAntiDeleteMode').value,
+    antiDeleteNotify:$('setAntiDeleteNotify').checked,
+
+    aiEnabled:$('setAIEnabled').checked
+  };
+}
+
+function displaySettings(data = {}) {
+  for (const [key,id] of Object.entries(settingElements)) {
+    if (data[key] !== undefined) {
+      setSettingValue(id,data[key]);
+    }
+  }
+}
+
+async function loadBotSettings() {
+  showSettingsMessage('Loading bot settings...');
+
+  try {
+    const data = await api('/api/settings');
+
+    displaySettings(data.settings || {});
+
+    showSettingsMessage(
+      'Settings loaded successfully.',
+      'success'
+    );
+  } catch (error) {
+    showSettingsMessage(
+      'Could not load settings: ' + error.message,
+      'error'
+    );
+  }
+}
+
+async function saveBotSettings() {
+  const button = $('saveBotSettings');
+
+  button.disabled = true;
+  button.textContent = 'Saving...';
+
+  showSettingsMessage('Saving settings...');
+
+  try {
+    const settings = readSettingsForm();
+
+    if (
+      !settings.prefix ||
+      settings.prefix.length > 5 ||
+      /\s/.test(settings.prefix)
+    ) {
+      throw new Error(
+        'Prefix must be 1–5 characters with no spaces.'
+      );
+    }
+
+    if (!settings.statusEmojis.length) {
+      throw new Error(
+        'Enter at least one status reaction emoji.'
+      );
+    }
+
+    const result = await api('/api/settings', {
+      method:'PUT',
+
+      headers:{
+        'Content-Type':'application/json'
+      },
+
+      body:JSON.stringify(settings)
+    });
+
+    displaySettings(result.settings || settings);
+
+    showSettingsMessage(
+      result.message || 'Settings saved successfully.',
+      'success'
+    );
+  } catch (error) {
+    showSettingsMessage(
+      'Save failed: ' + error.message,
+      'error'
+    );
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Save settings';
+  }
+}
+
+async function resetBotSettings() {
+  const confirmed = confirm(
+    'Restore all dashboard settings to the configuration defaults?'
+  );
+
+  if (!confirmed) return;
+
+  const button = $('resetBotSettings');
+
+  button.disabled = true;
+  showSettingsMessage('Restoring defaults...');
+
+  try {
+    const result = await api('/api/settings/reset', {
+      method:'POST'
+    });
+
+    displaySettings(result.settings || {});
+
+    showSettingsMessage(
+      result.message || 'Settings restored to defaults.',
+      'success'
+    );
+  } catch (error) {
+    showSettingsMessage(
+      'Reset failed: ' + error.message,
+      'error'
+    );
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// ==================================================
+// SETTINGS EVENTS
+// ==================================================
+
+$('saveBotSettings').addEventListener(
+  'click',
+  saveBotSettings
+);
+
+$('reloadBotSettings').addEventListener(
+  'click',
+  loadBotSettings
+);
+
+$('resetBotSettings').addEventListener(
+  'click',
+  resetBotSettings
+);
+
+$('goSettings').addEventListener('click',() => {
+  $('settingsCenter').scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
+});
+
+// ==================================================
+// GENERAL EVENT LISTENERS
+// ==================================================
 
 $('refresh').addEventListener('click',async () => {
-
   await refresh();
-
   await loadCommands();
-
+  await refreshSessions();
 });
 
 $('search').addEventListener('input',renderRegistry);
-
 $('category').addEventListener('change',renderRegistry);
-
-$('reloadPlugins').addEventListener(
-  'click',
-  reloadPlugins
-);
+$('reloadPlugins').addEventListener('click',reloadPlugins);
 
 $('showCommands').addEventListener('click',async () => {
-
   currentView = 'commands';
-
   await loadCommands();
-
   renderRegistry();
-
 });
 
 $('showPlugins').addEventListener('click',() => {
-
   currentView = 'plugins';
-
   renderRegistry();
-
 });
 
-// ==========================================
+// ==================================================
 // MULTI-SESSION CONTROLS
-// ==========================================
+// ==================================================
 
 async function refreshSessions() {
   if (!isAuthenticated) return;
+
   try {
     const data = await api('/api/sessions');
-    const sessions = Array.isArray(data.sessions) ? data.sessions : [];
-    $('sessionList').innerHTML = sessions.length ? sessions.map(session => `
-      <article class="plugin">
-        <span class="tag">${escapeHtml(session.state)}</span>
-        <b>${escapeHtml(session.id)}</b>
-        <small>Account: ${escapeHtml(session.phone || 'Not connected yet')}</small>
-        ${session.pairingCode ? `<small>Pairing code: <b>${escapeHtml(session.pairingCode)}</b></small>` : ''}
-        ${session.lastError ? `<small class="error">${escapeHtml(session.lastError)}</small>` : ''}
-        <button class="btn" data-stop-session="${escapeHtml(session.id)}">Stop session</button>
-      </article>
-    `).join('') : '<div class="muted">No additional sessions yet.</div>';
-    $('sessionList').querySelectorAll('[data-stop-session]').forEach(button => {
-      button.addEventListener('click', async () => {
-        const id = button.getAttribute('data-stop-session');
-        button.disabled = true;
-        try {
-          await api(`/api/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
-          $('sessionMessage').textContent = `Session ${id} stopped.`;
-          await refreshSessions();
-        } catch (error) { $('sessionMessage').textContent = error.message; button.disabled = false; }
+
+    const sessions = Array.isArray(data.sessions)
+      ? data.sessions
+      : [];
+
+    $('sessionList').innerHTML = sessions.length
+      ? sessions.map(session => `
+          <article class="plugin">
+            <span class="tag">
+              ${escapeHtml(session.state)}
+            </span>
+
+            <b>${escapeHtml(session.id)}</b>
+
+            <small>
+              Account: ${escapeHtml(session.phone || 'Not connected yet')}
+            </small>
+
+            ${session.pairingCode
+              ? `<small>Pairing code: <b>${escapeHtml(session.pairingCode)}</b></small>`
+              : ''}
+
+            ${session.lastError
+              ? `<small class="error">${escapeHtml(session.lastError)}</small>`
+              : ''}
+
+            <button class="btn" data-stop-session="${escapeHtml(session.id)}">
+              Stop session
+            </button>
+          </article>
+        `).join('')
+      : '<div class="muted">No additional sessions yet.</div>';
+
+    $('sessionList')
+      .querySelectorAll('[data-stop-session]')
+      .forEach(button => {
+        button.addEventListener('click',async () => {
+          const id = button.getAttribute('data-stop-session');
+
+          button.disabled = true;
+
+          try {
+            await api(
+              `/api/sessions/${encodeURIComponent(id)}`,
+              {method:'DELETE'}
+            );
+
+            $('sessionMessage').textContent =
+              `Session ${id} stopped.`;
+
+            await refreshSessions();
+          } catch (error) {
+            $('sessionMessage').textContent = error.message;
+            button.disabled = false;
+          }
+        });
       });
-    });
-  } catch (error) { $('sessionMessage').textContent = `Session list unavailable: ${error.message}`; }
+  } catch (error) {
+    $('sessionMessage').textContent =
+      `Session list unavailable: ${error.message}`;
+  }
 }
 
 async function createSession() {
   const id = $('newSessionId').value.trim();
   const phoneNumber = $('newSessionPhone').value.trim();
-  if (!id) { $('sessionMessage').textContent = 'Enter a session ID first.'; return; }
+
+  if (!id) {
+    $('sessionMessage').textContent =
+      'Enter a session ID first.';
+
+    return;
+  }
+
   const button = $('addSession');
+
   button.disabled = true;
-  $('sessionMessage').textContent = 'Starting WhatsApp session...';
+
+  $('sessionMessage').textContent =
+    'Starting WhatsApp session...';
+
   try {
     const result = await api('/api/sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, phoneNumber })
+      method:'POST',
+
+      headers:{
+        'Content-Type':'application/json'
+      },
+
+      body:JSON.stringify({id,phoneNumber})
     });
+
     const code = result.session?.pairingCode;
+
     $('sessionMessage').textContent = code
       ? `Session ${id} started. Pairing code: ${code}. Enter it in WhatsApp → Linked devices → Link with phone number.`
-      : `Session ${id} started. Check its status below; if already registered it will reconnect automatically.`;
+      : `Session ${id} started. Check its status below.`;
+
     $('newSessionId').value = '';
+
     await refreshSessions();
-  } catch (error) { $('sessionMessage').textContent = `Could not start session: ${error.message}`; }
-  finally { button.disabled = false; }
+  } catch (error) {
+    $('sessionMessage').textContent =
+      `Could not start session: ${error.message}`;
+  } finally {
+    button.disabled = false;
+  }
 }
 
-$('addSession').addEventListener('click', createSession);
-$('refreshSessions').addEventListener('click', refreshSessions);
+$('addSession').addEventListener('click',createSession);
 
-// ==========================================
+$('refreshSessions').addEventListener(
+  'click',
+  refreshSessions
+);
+
+// ==================================================
 // START DASHBOARD
-// ==========================================
+// ==================================================
 
 function startDashboard() {
-
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-  }
-
-  if (commandTimer) {
-    clearInterval(commandTimer);
-  }
+  if (refreshTimer) clearInterval(refreshTimer);
+  if (commandTimer) clearInterval(commandTimer);
 
   refresh();
-
   loadCommands();
   refreshSessions();
+  loadBotSettings();
 
   refreshTimer = setInterval(() => {
-
-    if (isAuthenticated) {
-      refresh();
-    }
-
+    if (isAuthenticated) refresh();
   },15000);
 
   commandTimer = setInterval(() => {
-
     if (
       isAuthenticated &&
       currentView === 'commands'
     ) {
       loadCommands();
     }
-
   },30000);
-
 }
 
-// ==========================================
+// ==================================================
 // INITIAL STATE
-// ==========================================
-
-// Dashboard is locked on every page load.
-// Dashboard credentials are never embedded or stored in localStorage.
+// ==================================================
 
 lockDashboard();
 
