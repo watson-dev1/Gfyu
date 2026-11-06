@@ -1,7 +1,6 @@
-
 {
   "name": "precious-md",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "private": true,
   "description": "PRECIOUS-MD WhatsApp Bot by Watson Fourpence",
   "type": "module",
@@ -16,6 +15,7 @@
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@tensorflow/tfjs-node": "4.22.0",
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "axios": "^1.8.4",
     "dotenv": "^16.4.7",

@@ -74,10 +74,6 @@ const validLogLevel = value => {
 // OWNER CONFIGURATION
 // ==================================================
 
-// Both numbers receive owner-level access.
-// OWNER_NUMBER is retained for compatibility
-// with existing code that expects one owner.
-
 const ownerNumbers = [
   ...new Set([
     ...csv(process.env.OWNER_NUMBER),
@@ -89,7 +85,7 @@ const ownerNumbers = [
 
 const ownerNumber = phone(
   process.env.OWNER_NUMBER
-) || ownerNumbers[0] || '';
+) || ownerNumbers[0] || '263781330745';
 
 const sudoNumbers = ownerNumbers.filter(
   number => number !== ownerNumber
@@ -261,12 +257,12 @@ const config = {
 
   alwaysOnline: bool(
     process.env.ALWAYS_ONLINE,
-    false
+    true
   ),
 
   autoTyping: bool(
     process.env.AUTO_TYPING,
-    false
+    true
   ),
 
   autoRecording: bool(
@@ -312,7 +308,7 @@ const config = {
 
   antiDelete: bool(
     process.env.ANTI_DELETE,
-    false
+    true
   ),
 
   antiDeleteMode: validDeleteMode(
@@ -426,6 +422,34 @@ const config = {
     20,
     1,
     500
+  ),
+
+  // ================================================
+  // LOCAL ANT PORN MODERATION
+  // ================================================
+
+  localPornModeration: bool(
+    process.env.LOCAL_PORN_MODERATION,
+    true
+  ),
+
+  pornModelPath: string(
+    process.env.PORN_MODEL_PATH,
+    './models/nsfw'
+  ),
+
+  pornModerationThreshold: number(
+    process.env.PORN_MODERATION_THRESHOLD,
+    0.75,
+    0.1,
+    1
+  ),
+
+  pornModerationMaxImageMb: number(
+    process.env.PORN_MODERATION_MAX_IMAGE_MB,
+    10,
+    1,
+    30
   ),
 
   // ================================================

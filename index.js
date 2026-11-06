@@ -28,6 +28,10 @@ import {
 import { handleMessage } from './lib/handler.js';
 
 import {
+  loadSecurityModel
+} from './lib/security.js';
+
+import {
   loadPlugins,
   reloadPlugins
 } from './lib/plugin-loader.js';
@@ -67,15 +71,15 @@ const DASHBOARD_FILE = path.join(
   'index.html'
 );
 
-// Dashboard password is stored directly here.
-// Change this password when necessary.
-const DASHBOARD_PASSWORD = 'harare@2030';
+// Dashboard password.
+// Change this before exposing the dashboard publicly.
+const DASHBOARD_PASSWORD =
+  process.env.DASHBOARD_PASSWORD || 'harare@2030';
 
 // Session lifetime: 12 hours.
 const DASHBOARD_SESSION_TTL = 12 * 60 * 60 * 1000;
 
-// HMAC secret is generated at startup.
-// Existing dashboard sessions expire after restart.
+// HMAC secret generated at startup.
 const DASHBOARD_SESSION_SECRET = crypto.randomBytes(48);
 
 const dashboardSessions = new Map();
@@ -89,6 +93,8 @@ const loginAttempts = new Map();
 
 const MAX_RELOAD_REQUESTS = 500;
 const RELOAD_COOLDOWN = 5000;
+
+const startedAt = Date.now();
 
 // ======================================================
 // GLOBAL STATE
@@ -109,8 +115,6 @@ let reconnectTimer = null;
 let pairingTimer = null;
 
 let shutdownPromise = null;
-
-const startedAt = Date.now();
 
 const processedMessages = new Set();
 const reloadRequests = new Map();
@@ -891,6 +895,43 @@ async function initializeProject() {
 }
 
 // ======================================================
+// LOCAL NSFW MODEL INITIALIZATION
+// ======================================================
+
+async function initializeSecurityModel() {
+  const groups = Object.values(
+    globalThis.db?.groups || {}
+  );
+
+  const antiPornEnabled = groups.some(
+    group => group?.antiPorn === true
+  );
+
+  if (!antiPornEnabled) {
+    logInfo(
+      'Local image moderation is idle. The model will load when AntiPorn is first used.'
+    );
+
+    return;
+  }
+
+  try {
+    logInfo('Initializing local NSFW image moderation...');
+
+    await loadSecurityModel();
+
+    logInfo('Local NSFW image moderation is ready.');
+
+  } catch (error) {
+    logError('NSFW MODEL INITIALIZATION', error);
+
+    logInfo(
+      'Bot startup will continue. AntiPorn will fail open until the model becomes available.'
+    );
+  }
+}
+
+// ======================================================
 // MESSAGE DEDUPLICATION
 // ======================================================
 
@@ -984,6 +1025,10 @@ async function startBot() {
 
   try {
     await initializeProject();
+
+    // Load local NSFWJS only when a group has AntiPorn
+    // enabled. The security module can also load it lazily.
+    await initializeSecurityModel();
 
     const {
       state,
