@@ -84,9 +84,6 @@ function logError(label, error) {
 // SETTINGS CONFIGURATION
 // ======================================================
 
-// These values are captured before database settings are
-// applied. They are used by the dashboard Reset Defaults action.
-
 const DEFAULT_BOT_SETTINGS = Object.freeze({
   prefix: String(config.prefix || '.'),
   publicMode: Boolean(config.publicMode),
@@ -102,7 +99,12 @@ const DEFAULT_BOT_SETTINGS = Object.freeze({
 
   statusEmojis: Array.isArray(config.statusEmojis)
     ? [...config.statusEmojis]
-    : ['🔥', '❤️', '😂', '💚'],
+    : [
+        '🔥', '❤️', '😂', '💚',
+        '😍', '😮', '😢', '🙏',
+        '👍', '👏', '😎', '🥰',
+        '💯', '🤩', '😭', '✨'
+      ],
 
   antiCall: Boolean(config.antiCall),
   antiDelete: Boolean(config.antiDelete),
@@ -130,6 +132,10 @@ const BOOLEAN_SETTING_KEYS = new Set([
   'antiDeleteNotify',
   'aiEnabled'
 ]);
+
+// ======================================================
+// DASHBOARD SETTINGS
+// ======================================================
 
 function getDashboardSettings() {
   const settings = globalThis.db?.settings || {};
@@ -162,6 +168,10 @@ function getDashboardSettings() {
   };
 }
 
+// ======================================================
+// APPLY SETTINGS
+// ======================================================
+
 function applyBotSettings(settings = {}) {
   for (const key of EDITABLE_SETTING_KEYS) {
     if (settings[key] === undefined) continue;
@@ -174,6 +184,66 @@ function applyBotSettings(settings = {}) {
 
   globalThis.config = config;
 }
+
+// ======================================================
+// AUTOMATION SETTINGS SYNCHRONIZATION
+// ======================================================
+
+// Dashboard settings are stored at the top level.
+// Automation settings are stored inside settings.automation.
+// This function keeps both locations synchronized.
+
+function syncAutomationSettings(settings = {}, overwrite = false) {
+  if (!globalThis.db) return;
+
+  if (
+    !globalThis.db.settings ||
+    typeof globalThis.db.settings !== 'object' ||
+    Array.isArray(globalThis.db.settings)
+  ) {
+    globalThis.db.settings = {};
+  }
+
+  if (
+    !globalThis.db.settings.automation ||
+    typeof globalThis.db.settings.automation !== 'object' ||
+    Array.isArray(globalThis.db.settings.automation)
+  ) {
+    globalThis.db.settings.automation = {};
+  }
+
+  const automation = globalThis.db.settings.automation;
+
+  const mapping = {
+    readMessages: 'autoread',
+    alwaysOnline: 'alwaysonline',
+    autoViewStatus: 'autostatus',
+    autoStatusReact: 'statusreact',
+    autoReact: 'autoreact',
+    antiCall: 'anticall',
+    autoTyping: 'autotyping',
+    autoRecording: 'autorecording'
+  };
+
+  for (const [configKey, automationKey] of Object.entries(mapping)) {
+    if (typeof settings[configKey] !== 'boolean') continue;
+
+    if (
+      overwrite ||
+      typeof automation[automationKey] !== 'boolean'
+    ) {
+      automation[automationKey] = settings[configKey];
+    }
+  }
+
+  if (Array.isArray(settings.statusEmojis)) {
+    automation.statusEmojis = [...settings.statusEmojis];
+  }
+}
+
+// ======================================================
+// VALIDATE SETTINGS
+// ======================================================
 
 function validateBotSettings(input) {
   if (
@@ -277,6 +347,10 @@ function validateBotSettings(input) {
   };
 }
 
+// ======================================================
+// SAVE SETTINGS
+// ======================================================
+
 async function persistBotSettings(updates) {
   if (!globalThis.db) {
     throw new Error('Database has not been loaded.');
@@ -292,6 +366,9 @@ async function persistBotSettings(updates) {
 
   Object.assign(globalThis.db.settings, updates);
 
+  // Synchronize dashboard values with automation settings.
+  syncAutomationSettings(updates, true);
+
   globalThis.db.settings.updatedAt = new Date().toISOString();
 
   applyBotSettings(globalThis.db.settings);
@@ -306,7 +383,7 @@ async function persistBotSettings(updates) {
 // ======================================================
 
 const DASHBOARD_PASSWORD =
-  process.env.DASHBOARD_PASSWORD || 'harare @2030';
+  process.env.DASHBOARD_PASSWORD || 'watson-dev1';
 
 const DASHBOARD_SESSION_TTL = 12 * 60 * 60 * 1000;
 const DASHBOARD_SESSION_SECRET = crypto.randomBytes(48);
@@ -1202,9 +1279,15 @@ async function initializeProject() {
 
     databaseLoaded = true;
 
-    // Apply all stored dashboard settings, not only prefix
-    // and public mode.
+    // Apply stored dashboard settings.
     applyBotSettings(globalThis.db?.settings || {});
+
+    // Sync top-level settings into automation settings.
+    // Existing nested automation values are preserved.
+    syncAutomationSettings(
+      globalThis.db?.settings || {},
+      false
+    );
 
     logInfo('Database loaded.');
   }
@@ -1261,6 +1344,12 @@ function rememberMessage(id) {
 async function processMessage(sock, message) {
   if (!message?.message) return;
   if (activeSocket !== sock) return;
+
+  // Status updates are handled by automation.js.
+  // Do not send status updates through the command handler.
+  if (message?.key?.remoteJid === 'status@broadcast') {
+    return;
+  }
 
   const id = getMessageId(message);
 
@@ -1330,7 +1419,9 @@ async function startBot() {
     activeSocket = sock;
     globalThis.sock = sock;
 
+    // ==================================================
     // SAVE CREDENTIALS
+    // ==================================================
 
     sock.ev.on('creds.update', async () => {
       try {
@@ -1340,12 +1431,19 @@ async function startBot() {
       }
     });
 
+    // ==================================================
     // INSTALL EVENT MODULES
+    // ==================================================
 
     installEventHandlers(sock);
+
+    // Automation receives status updates independently
+    // from the main command handler.
     installAutomationHandlers(sock);
 
+    // ==================================================
     // INCOMING MESSAGES
+    // ==================================================
 
     sock.ev.on(
       'messages.upsert',
@@ -1355,12 +1453,22 @@ async function startBot() {
 
         for (const message of messages || []) {
           if (activeSocket !== sock) break;
+
+          // Never process WhatsApp status updates as commands.
+          if (
+            message?.key?.remoteJid === 'status@broadcast'
+          ) {
+            continue;
+          }
+
           await processMessage(sock, message);
         }
       }
     );
 
+    // ==================================================
     // CONNECTION EVENTS
+    // ==================================================
 
     sock.ev.on(
       'connection.update',
@@ -1454,7 +1562,9 @@ async function startBot() {
       }
     );
 
+    // ==================================================
     // PAIRING CODE LOGIN
+    // ==================================================
 
     const number = getPairingNumber();
 
