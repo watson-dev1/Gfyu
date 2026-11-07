@@ -1,4 +1,3 @@
-
 import config from './config.js';
 
 import express from 'express';
@@ -134,11 +133,51 @@ const BOOLEAN_SETTING_KEYS = new Set([
 ]);
 
 // ======================================================
+// ANTI-DELETE SETTINGS HELPERS
+// ======================================================
+
+function getStoredAntiDeleteSettings(settings = {}) {
+  const value =
+    settings.antiDelete ??
+    settings.antidelete ??
+    settings.anti_delete ??
+    settings.automation?.antiDelete ??
+    settings.automation?.antidelete ??
+    false;
+
+  if (typeof value === 'boolean') {
+    return {
+      enabled: value,
+      mode: settings.antiDeleteMode || 'all'
+    };
+  }
+
+  if (value && typeof value === 'object') {
+    return {
+      enabled: value.enabled === true,
+      mode: value.mode || settings.antiDeleteMode || 'all'
+    };
+  }
+
+  return {
+    enabled: false,
+    mode: settings.antiDeleteMode || 'all'
+  };
+}
+
+function normalizeAntiDeleteMode(mode) {
+  return ['all', 'group', 'private'].includes(mode)
+    ? mode
+    : 'all';
+}
+
+// ======================================================
 // DASHBOARD SETTINGS
 // ======================================================
 
 function getDashboardSettings() {
   const settings = globalThis.db?.settings || {};
+  const antiDelete = getStoredAntiDeleteSettings(settings);
 
   return {
     prefix: config.prefix || '.',
@@ -158,8 +197,10 @@ function getDashboardSettings() {
       : [...DEFAULT_BOT_SETTINGS.statusEmojis],
 
     antiCall: Boolean(config.antiCall),
-    antiDelete: Boolean(config.antiDelete),
-    antiDeleteMode: config.antiDeleteMode || 'all',
+
+    // Always return a boolean to the dashboard.
+    antiDelete: antiDelete.enabled,
+    antiDeleteMode: normalizeAntiDeleteMode(antiDelete.mode),
     antiDeleteNotify: Boolean(config.antiDeleteNotify),
 
     aiEnabled: Boolean(config.aiEnabled),
@@ -176,7 +217,31 @@ function applyBotSettings(settings = {}) {
   for (const key of EDITABLE_SETTING_KEYS) {
     if (settings[key] === undefined) continue;
 
+    if (key === 'antiDelete') {
+      const value = settings.antiDelete;
+
+      // Database stores an object; runtime config uses boolean.
+      config.antiDelete =
+        value && typeof value === 'object'
+          ? value.enabled === true
+          : value === true;
+
+      continue;
+    }
+
     config[key] = settings[key];
+  }
+
+  const antiDelete = getStoredAntiDeleteSettings(settings);
+
+  if (settings.antiDeleteMode !== undefined) {
+    config.antiDeleteMode = normalizeAntiDeleteMode(
+      settings.antiDeleteMode
+    );
+  } else if (antiDelete.mode) {
+    config.antiDeleteMode = normalizeAntiDeleteMode(
+      antiDelete.mode
+    );
   }
 
   config.prefix = String(config.prefix || '.');
@@ -188,10 +253,6 @@ function applyBotSettings(settings = {}) {
 // ======================================================
 // AUTOMATION SETTINGS SYNCHRONIZATION
 // ======================================================
-
-// Dashboard settings are stored at the top level.
-// Automation settings are stored inside settings.automation.
-// This function keeps both locations synchronized.
 
 function syncAutomationSettings(settings = {}, overwrite = false) {
   if (!globalThis.db) return;
@@ -364,14 +425,46 @@ async function persistBotSettings(updates) {
     globalThis.db.settings = {};
   }
 
-  Object.assign(globalThis.db.settings, updates);
+  const settings = globalThis.db.settings;
+  const previousAntiDelete = settings.antiDelete;
 
-  // Synchronize dashboard values with automation settings.
+  Object.assign(settings, updates);
+
+  // Keep anti-delete in structured database format.
+  if (
+    Object.hasOwn(updates, 'antiDelete') ||
+    Object.hasOwn(updates, 'antiDeleteMode')
+  ) {
+    const previousEnabled =
+      typeof previousAntiDelete === 'boolean'
+        ? previousAntiDelete
+        : previousAntiDelete?.enabled === true;
+
+    const previousMode =
+      previousAntiDelete?.mode ||
+      settings.antiDeleteMode ||
+      'all';
+
+    settings.antiDelete = {
+      enabled: Object.hasOwn(updates, 'antiDelete')
+        ? updates.antiDelete === true
+        : previousEnabled,
+
+      mode: normalizeAntiDeleteMode(
+        Object.hasOwn(updates, 'antiDeleteMode')
+          ? updates.antiDeleteMode
+          : previousMode
+      )
+    };
+
+    settings.antiDeleteMode = settings.antiDelete.mode;
+  }
+
   syncAutomationSettings(updates, true);
 
-  globalThis.db.settings.updatedAt = new Date().toISOString();
+  settings.updatedAt = new Date().toISOString();
 
-  applyBotSettings(globalThis.db.settings);
+  applyBotSettings(settings);
 
   await saveDatabase();
 
@@ -1279,11 +1372,10 @@ async function initializeProject() {
 
     databaseLoaded = true;
 
-    // Apply stored dashboard settings.
+    // Convert stored anti-delete settings into runtime config.
     applyBotSettings(globalThis.db?.settings || {});
 
-    // Sync top-level settings into automation settings.
-    // Existing nested automation values are preserved.
+    // Synchronize top-level settings into automation settings.
     syncAutomationSettings(
       globalThis.db?.settings || {},
       false
@@ -1346,7 +1438,6 @@ async function processMessage(sock, message) {
   if (activeSocket !== sock) return;
 
   // Status updates are handled by automation.js.
-  // Do not send status updates through the command handler.
   if (message?.key?.remoteJid === 'status@broadcast') {
     return;
   }
@@ -1435,10 +1526,11 @@ async function startBot() {
     // INSTALL EVENT MODULES
     // ==================================================
 
+    // This installs anti-delete message caching and
+    // deletion detection, plus group welcome/goodbye events.
     installEventHandlers(sock);
 
-    // Automation receives status updates independently
-    // from the main command handler.
+    // Automation receives status updates independently.
     installAutomationHandlers(sock);
 
     // ==================================================
@@ -1454,7 +1546,6 @@ async function startBot() {
         for (const message of messages || []) {
           if (activeSocket !== sock) break;
 
-          // Never process WhatsApp status updates as commands.
           if (
             message?.key?.remoteJid === 'status@broadcast'
           ) {
@@ -1514,6 +1605,7 @@ async function startBot() {
           console.log(`📱 Account: ${jidNormalizedUser(sock.user.id)}`);
           console.log(`🧩 Plugins: ${globalThis.plugins?.length || 0}`);
           console.log(`⚙️ Commands: ${globalThis.commandMap?.size || 0}`);
+          console.log(`🗑️ Anti-delete: ${config.antiDelete ? 'ON' : 'OFF'}`);
           console.log(`🌐 Dashboard: http://localhost:${PORT}`);
           console.log(`❤️ Health: http://localhost:${PORT}/health`);
 
